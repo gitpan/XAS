@@ -1,0 +1,199 @@
+---
+abstract: 'A framework for distributed applicatons'
+author:
+  - 'Kevin L. Esteb <kevin@kesteb.us>'
+build_requires:
+  Test::More: 0
+configure_requires:
+  Module::Build: 0.36
+generated_by: 'Module::Build version 0.3607'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: XAS
+provides:
+  XAS:
+    file: lib/XAS.pm
+    version: 0.01
+  XAS::Apps::Base::Alerts:
+    file: lib/XAS/Apps/Base/Alerts.pm
+    version: 0.03
+  XAS::Apps::Base::Collector:
+    file: lib/XAS/Apps/Base/Collector.pm
+    version: 0.04
+  XAS::Apps::Base::ExtractData:
+    file: lib/XAS/Apps/Base/ExtractData.pm
+    version: 0.01
+  XAS::Apps::Base::ExtractGlobals:
+    file: lib/XAS/Apps/Base/ExtractGlobals.pm
+    version: 0.01
+  XAS::Apps::Base::RemoveData:
+    file: lib/XAS/Apps/Base/RemoveData.pm
+    version: 0.01
+  XAS::Apps::Database::Schema:
+    file: lib/XAS/Apps/Database/Schema.pm
+  XAS::Apps::Templates::Daemon:
+    file: lib/XAS/Apps/Templates/Daemon.pm
+  XAS::Apps::Templates::Generic:
+    file: lib/XAS/Apps/Templates/Generic.pm
+  XAS::Apps::Test::Echo::Client:
+    file: lib/XAS/Apps/Test/Echo/Client.pm
+    version: 0.01
+  XAS::Apps::Test::Echo::Server:
+    file: lib/XAS/Apps/Test/Echo/Server.pm
+    version: 0.02
+  XAS::Apps::Test::RPC::Client:
+    file: lib/XAS/Apps/Test/RPC/Client.pm
+    version: 0.01
+  XAS::Apps::Test::RPC::Server:
+    file: lib/XAS/Apps/Test/RPC/Server.pm
+    version: 0.01
+  XAS::Base:
+    file: lib/XAS/Base.pm
+    version: 0.01
+  XAS::Class:
+    file: lib/XAS/Class.pm
+  XAS::Collector::Alert:
+    file: lib/XAS/Collector/Alert.pm
+    version: 0.01
+  XAS::Collector::Base:
+    file: lib/XAS/Collector/Base.pm
+    version: 0.02
+  XAS::Collector::Connector:
+    file: lib/XAS/Collector/Connector.pm
+    version: 0.01
+  XAS::Collector::Factory:
+    file: lib/XAS/Collector/Factory.pm
+    version: 0.02
+  XAS::Constants:
+    file: lib/XAS/Constants.pm
+    version: 0.02
+  XAS::Exception:
+    file: lib/XAS/Exception.pm
+  XAS::Lib::App:
+    file: lib/XAS/Lib/App.pm
+    version: 0.02
+  XAS::Lib::App::Daemon:
+    file: lib/XAS/Lib/App/Daemon.pm
+    version: 0.01
+  XAS::Lib::App::Daemon::POE:
+    file: lib/XAS/Lib/App/Daemon/POE.pm
+    version: 0.01
+  XAS::Lib::Connector:
+    file: lib/XAS/Lib/Connector.pm
+    version: 0.01
+  XAS::Lib::Counter:
+    file: lib/XAS/Lib/Counter.pm
+    version: 0.02
+  XAS::Lib::Daemon::Logger:
+    file: lib/XAS/Lib/Daemon/Logger.pm
+    version: 0.02
+  XAS::Lib::Daemon::Logging:
+    file: lib/XAS/Lib/Daemon/Logging.pm
+    version: 0.02
+  XAS::Lib::Gearman:
+    file: lib/XAS/Lib/Gearman.pm
+    version: 0.02
+  XAS::Lib::Gearman::Admin:
+    file: lib/XAS/Lib/Gearman/Admin.pm
+    version: 0.02
+  XAS::Lib::Gearman::Admin::Status:
+    file: lib/XAS/Lib/Gearman/Admin/Status.pm
+    version: 0.02
+  XAS::Lib::Gearman::Admin::Worker:
+    file: lib/XAS/Lib/Gearman/Admin/Worker.pm
+    version: 0.02
+  XAS::Lib::Gearman::Client:
+    file: lib/XAS/Lib/Gearman/Client.pm
+    version: 0.02
+  XAS::Lib::Gearman::Client::Status:
+    file: lib/XAS/Lib/Gearman/Client/Status.pm
+    version: 0.02
+  XAS::Lib::Gearman::Worker:
+    file: lib/XAS/Lib/Gearman/Worker.pm
+    version: 0.02
+  XAS::Lib::Net::Client:
+    file: lib/XAS/Lib/Net/Client.pm
+    version: 0.02
+  XAS::Lib::Net::Server:
+    file: lib/XAS/Lib/Net/Server.pm
+    version: 0.02
+  XAS::Lib::RPC::JSON::Client:
+    file: lib/XAS/Lib/RPC/JSON/Client.pm
+    version: 0.02
+  XAS::Lib::RPC::JSON::Server:
+    file: lib/XAS/Lib/RPC/JSON/Server.pm
+    version: 0.02
+  XAS::Lib::Session:
+    file: lib/XAS/Lib/Session.pm
+    version: 0.04
+  XAS::Lib::Spool:
+    file: lib/XAS/Lib/Spool.pm
+    version: 0.02
+  XAS::Model::DBM:
+    file: lib/XAS/Model/DBM.pm
+    version: 0.01
+  XAS::Model::Database:
+    file: lib/XAS/Model/Database.pm
+    version: 0.01
+  XAS::Model::Database::Alert:
+    file: lib/XAS/Model/Database/Alert.pm
+    version: 0.01
+  XAS::Model::Database::Counter:
+    file: lib/XAS/Model/Database/Counter.pm
+    version: 0.01
+  XAS::Monitor::Base:
+    file: lib/XAS/Monitor/Base.pm
+    version: 0.02
+  XAS::Monitor::Database:
+    file: lib/XAS/Monitor/Database.pm
+    version: 0.02
+  XAS::Monitor::Database::Alert:
+    file: lib/XAS/Monitor/Database/Alert.pm
+    version: 0.01
+  XAS::Scheduler::Base:
+    file: lib/XAS/Scheduler/Base.pm
+    version: 0.01
+  XAS::System:
+    file: lib/XAS/System.pm
+    version: 0.01
+  XAS::System::Alert:
+    file: lib/XAS/System/Alert.pm
+    version: 0.02
+  XAS::System::Email:
+    file: lib/XAS/System/Email.pm
+    version: 0.01
+  XAS::System::Environment:
+    file: lib/XAS/System/Environment.pm
+    version: 0.01
+  XAS::System::Logger:
+    file: lib/XAS/System/Logger.pm
+    version: 0.01
+  XAS::Utils:
+    file: lib/XAS/Utils.pm
+    version: 0.03
+requires:
+  Badger: 0.06
+  Config::Any: 0
+  Config::Tiny: 0
+  DBIx::Class: 0.08121
+  DBIx::Class::OptimisticLocking: 0
+  DBIx::Class::Schema::Config: 0
+  DateTime: 0.55
+  DateTime::Format::MySQL: 0
+  DateTime::Format::Pg: 0
+  DateTime::Format::Strptime: 0
+  DateTime::TimeZone: 1.16
+  Gearman::XS: 0.11
+  Hash::Merge: 0
+  LockFile::Simple: 0.207
+  MIME::Lite: 0
+  POE: 1.289
+  Params::Validate: 0.95
+  Pod::POM: 0
+  Text::Autoformat: 0
+  Try::Tiny: 0.04
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.01
