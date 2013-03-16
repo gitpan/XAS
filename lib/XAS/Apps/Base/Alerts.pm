@@ -88,10 +88,9 @@ XAS::Lib::App::Daemon::POE.
 
 =head1 SEE ALSO
 
- XAS::Daemon::Logger
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
- XAS::Monitor::Database::Alert
+ sbin/xas-alerts.pl
+
+ XAS
 
 =head1 AUTHOR
 

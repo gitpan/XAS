@@ -10,6 +10,7 @@ use Badger::Class
   constant => {
       AVAILABLE  => 'Available',
       DELETE     => 'Delete',
+      XAS_QUEUE  => '/queue/xas',
 
       # PBS Status vaules
 
@@ -66,14 +67,14 @@ use Badger::Class
                RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL RPC_ERR_SERVER 
                RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN RPC_ERR_APP LABEL_F1 LABEL_F2 
                LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6 LABEL_F7 LABEL_F8 LABEL_F9 
-               LABEL_F10 LABEL_F11 LABEL_F12/,
+               LABEL_F10 LABEL_F11 LABEL_F12 XAS_QUEUE/,
       any => q/AVAILABLE DELETE UNKNOWN QUEUED COMPLETED EXITING RUNNING 
                MOVING WAITING SUSPENDED SUBMIT SUBMITTED JOBSTATS RPC_JSON 
                RPC_DEFAULT_PORT RPC_DEFAULT_ADDRESS RPC_ERR_PARSE RPC_ERR_REQ 
                RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL RPC_ERR_SERVER 
                RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN RPC_ERR_APP LABEL_F1 LABEL_F2 
                LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6 LABEL_F7 LABEL_F8 LABEL_F9 
-               LABEL_F10 LABEL_F11 LABEL_F12/,
+               LABEL_F10 LABEL_F11 LABEL_F12 XAS_QUEUE/,
       tags => {
           batch   => 'UNKNOWN QUEUED COMPLETED EXITING RUNNING MOVING WAITING SUSPENDED AVAILABLE DELETE SUBMIT SUBMITTED',
           workman => 'UNKNOWN COMPLETED RUNNING AVAILABLE SUBMIT SUBMITTED JOBSTAT',
@@ -109,7 +110,7 @@ XAS::Constants - A Perl extension for the XAS environment
 =head1 DESCRIPTION
 
 This module provides various constants for the XAS enviromnet. It inherits from
-Badger::Constants and also provides those constants.
+L<Badger::Constants|Badger::Constants> and also provides those constants.
 
 =head2 EXPORT
 
@@ -121,7 +122,7 @@ Badger::Constants and also provides those constants.
  LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6 LABEL_F7 LABEL_F8 LABEL_F9 
  LABEL_F10 LABEL_F11 LABEL_F12
 
- Along with these macros
+ Along with these tags
 
  batch
  workman
@@ -130,67 +131,7 @@ Badger::Constants and also provides those constants.
 
 =head1 SEE ALSO
 
- XAS::Base
- XAS::Class
- XAS::Constants
- XAS::Exception
- XAS::System
- XAS::Utils
-
- XAS::Apps::Base::Alerts
- XAS::Apps::Base::Collector
- XAS::Apps::Base::ExtractData
- XAS::Apps::Base::ExtractGlobals
- XAS::Apps::Base::RemoveData
- XAS::Apps::Database::Schema
- XAS::Apps::Templates::Daemon
- XAS::Apps::Templates::Generic
- XAS::Apps::Test::Echo::Client
- XAS::Apps::Test::Echo::Server
- XAS::Apps::Test::RPC::Client
- XAS::Apps::Test::RPC::Methods
- XAS::Apps::Test::RPC::Server
-
- XAS::Collector::Alert
- XAS::Collector::Base
- XAS::Collector::Connector
- XAS::Collector::Factory
-
- XAS::Lib::App
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
- XAS::Lib::Connector
- XAS::Lib::Counter
- XAS::Lib::Daemon::Logger
- XAS::Lib::Daemon::Logging
- XAS::Lib::Gearman::Admin
- XAS::Lib::Gearman::Admin::Status
- XAS::Lib::Gearman::Admin::Worker
- XAS::Lib::Gearman::Client
- XAS::Lib::Gearman::Client::Status
- XAS::Lib::Gearman::Worker
- XAS::Lib::Net::Client
- XAS::LIb::Net::Server
- XAS::Lib::RPC::JSON::Client
- XAS::Lib::RPC::JSON::Server
- XAS::Lib::Session
- XAS::Lib::Spool
-
- XAS::Model::Database
- XAS::Model::Database::Alert
- XAS::Model::Database::Counter
- XAS::Model::DBM
-
- XAS::Monitor::Base
- XAS::Monitor::Database
- XAS::Monitor::Database::Alert
-
- XAS::Scheduler::Base
-
- XAS::System::Alert
- XAS::System::Email
- XAS::System::Environment
- XAS::System::Logger
+ XAS
 
 =head1 AUTHOR
 

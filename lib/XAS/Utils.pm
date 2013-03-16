@@ -556,29 +556,29 @@ namespace.
 
 =head1 METHODS
 
-=head2 db2dt
+=head2 db2dt($datestring)
 
 This routine will take a date format of YYYY-MM-DD HH:MM:SS and convert it
 into a DateTime object.
 
-=head2 dt2db
+=head2 dt2db($datetime)
 
 This routine will take a DateTime object and convert it into the following
 string: YYYY-MM-DD HH:MM:SS
 
-=head2 trim
+=head2 trim($string)
 
 Trim the whitespace from the beginning and end of a string.
 
-=head2 ltrim
+=head2 ltrim($string)
 
 Trim the whitespace from the end of a string.
 
-=head2 rtrim
+=head2 rtrim($string)
 
 Trim the whitespace from the beginning of a string.
 
-=head2 compress
+=head2 compress($string)
 
 Reduces multiple whitespace to a single space.
 
@@ -679,7 +679,7 @@ The name of the module.
 
 =item B<$options>
 
-Optional options to use with the module.
+A hashref of optional options to use with the module.
 
 =back
 
@@ -699,67 +699,7 @@ The name of the module.
 
  Badger::Utils
 
- XAS::Base
- XAS::Class
- XAS::Constants
- XAS::Exception
- XAS::System
- XAS::Utils
-
- XAS::Apps::Base::Alerts
- XAS::Apps::Base::Collector
- XAS::Apps::Base::ExtractData
- XAS::Apps::Base::ExtractGlobals
- XAS::Apps::Base::RemoveData
- XAS::Apps::Database::Schema
- XAS::Apps::Templates::Daemon
- XAS::Apps::Templates::Generic
- XAS::Apps::Test::Echo::Client
- XAS::Apps::Test::Echo::Server
- XAS::Apps::Test::RPC::Client
- XAS::Apps::Test::RPC::Methods
- XAS::Apps::Test::RPC::Server
-
- XAS::Collector::Alert
- XAS::Collector::Base
- XAS::Collector::Connector
- XAS::Collector::Factory
-
- XAS::Lib::App
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
- XAS::Lib::Connector
- XAS::Lib::Counter
- XAS::Lib::Daemon::Logger
- XAS::Lib::Daemon::Logging
- XAS::Lib::Gearman::Admin
- XAS::Lib::Gearman::Admin::Status
- XAS::Lib::Gearman::Admin::Worker
- XAS::Lib::Gearman::Client
- XAS::Lib::Gearman::Client::Status
- XAS::Lib::Gearman::Worker
- XAS::Lib::Net::Client
- XAS::LIb::Net::Server
- XAS::Lib::RPC::JSON::Client
- XAS::Lib::RPC::JSON::Server
- XAS::Lib::Session
- XAS::Lib::Spool
-
- XAS::Model::Database
- XAS::Model::Database::Alert
- XAS::Model::Database::Counter
- XAS::Model::DBM
-
- XAS::Monitor::Base
- XAS::Monitor::Database
- XAS::Monitor::Database::Alert
-
- XAS::Scheduler::Base
-
- XAS::System::Alert
- XAS::System::Email
- XAS::System::Environment
- XAS::System::Logger
+ XAS
 
 =head1 AUTHOR
 

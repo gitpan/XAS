@@ -9,6 +9,7 @@ Changes
 ignore.txt
 initd/xas-alerts.debian
 initd/xas-collector.debian
+initd/xas-spooler.debian
 lib/XAS.pm
 lib/XAS/Base.pm
 lib/XAS/Apps/Base/Alerts.pm
@@ -29,6 +30,12 @@ lib/XAS/Collector/Alert.pm
 lib/XAS/Collector/Base.pm
 lib/XAS/Collector/Connector.pm
 lib/XAS/Collector/Factory.pm
+lib/XAS/Docs/Base.pm
+lib/XAS/Docs/Configuration.pm
+lib/XAS/Docs/Installation.pm
+lib/XAS/Docs/Objectives.pm
+lib/XAS/Docs/Startup.pm
+lib/XAS/Docs/Theory.pm
 lib/XAS/Exception.pm
 lib/XAS/Lib/App.pm
 lib/XAS/Lib/App/Daemon.pm
@@ -58,6 +65,9 @@ lib/XAS/Monitor/Base.pm
 lib/XAS/Monitor/Database.pm
 lib/XAS/Monitor/Database/Alert.pm
 lib/XAS/Scheduler/Base.pm
+lib/XAS/Spooler/Connector.pm
+lib/XAS/Spooler/Factory.pm
+lib/XAS/Spooler/Processor.pm
 lib/XAS/System.pm
 lib/XAS/System/Email.pm
 lib/XAS/System/Environment.pm
@@ -70,6 +80,7 @@ sbin/daemon-template.pl
 sbin/echo-server.pl
 sbin/xas-alerts.pl
 sbin/xas-collector.pl
+sbin/xas-spooler.pl
 sbin/rpc-server.pl
 t/00-load.t
 t/boilerplate.t

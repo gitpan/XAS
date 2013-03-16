@@ -20,41 +20,6 @@ use XAS::Class
 # Public Methods
 # ----------------------------------------------------------------------
 
-sub setup {
-    my ($self, $configs) = @_;
-
-    my $cfg;
-    my @types;
-    my @queues;
-    my @sections;
-
-    if ($cfg = Config::IniFiles->new(-file => $configs->path)) {
-
-        @sections = $cfg->Sections;
-
-        foreach my $section (@sections) {
-
-            next if ($section !~ /^collector:/);
-
-            push(@types, {
-                $cfg->val($section, 'packet-type'),
-                $cfg->val($section, 'alias')
-            });
-
-            push(@queues, $cfg->val($section, 'queue'));
-
-        }
-
-    } else {
-
-        $self->throw($self->message('badini', $configs));
-
-    }
-
-    return \@types, \@queues;
-
-}
-
 sub main {
     my $self = shift;
 
@@ -64,11 +29,15 @@ sub main {
     my $hostname = ($self->host ne '') ? $self->host : $self->env->mqserver;
     my $configs  = File(($self->configs ne '') ? $self->configs : $self->env->cfgfile);
 
-    my ($types, $queues) = $self->setup($configs);
-
     $logger = XAS::Lib::Daemon::Logger->new(
         -alias  => 'logger',
         -logger => $self->log
+    );
+
+    $collector = XAS::Collector::Factory->load(
+        -connector => 'connector',
+        -logger    => 'logger',
+        -configs   => $configs
     );
 
     $connection = XAS::Collector::Connector->spawn(
@@ -80,14 +49,8 @@ sub main {
         Logger          => 'logger',
         Login           => 'guest',
         Passcode        => 'guest',
-        Queues          => $queues,
-        Types           => $types
-    );
-
-    $collector = XAS::Collector::Factory->load(
-        -connector => 'connector',
-        -logger    => 'logger',
-        -configs   => $configs
+        Queues          => $collector->queues,
+        Types           => $collector->types,
     );
 
     $self->log->info('Starting up');
@@ -145,17 +108,15 @@ This specifies three options that may be on the command line. They are
     host    - the host the message queue resides on.
     configs - the configuration file to use.
 
-All of these options will default to what is defined in XAS::System::Environment.
+All of these options will default to what is defined in L<XAS::System::Environment|XAS::System::Environment>.
 
 =back
 
 =head1 SEE ALSO
 
- XAS::Daemon::Logger
- XAS::Lib::App::Daemon
- XAS::System::Environment
- XAS::Lib::App::Daemon::POE
- XAS::Monitor::Database::Alert
+ sbin/xas-collector.pl
+
+ XAS
 
 =head1 AUTHOR
 

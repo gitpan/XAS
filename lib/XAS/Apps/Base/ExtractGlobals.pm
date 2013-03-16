@@ -106,14 +106,9 @@ Defines which database to extract data from.
 
 =head1 SEE ALSO
 
- pg_extract_data.pl
- pg_remove_data.pl
- pg_extract_global.pl
+ bin/pg_extract_global.pl
 
- XAS::Lib::App
-
- XAS::Apps::Base::RemoveData
- XAS::Apps::Base::ExtractData
+ XAS
 
 =head1 AUTHOR
 

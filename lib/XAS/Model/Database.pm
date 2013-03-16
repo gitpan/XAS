@@ -192,75 +192,20 @@ Example
 
 =head1 EXPORT
 
-The following symbols can be exported.
+Symbols for the tables are exported in this fashion. The rule is that any 
+class below the "XAS::Model::Database" hierarchy will be joined and camel 
+cased to signify that they are constants. 
 
- Alert - XAS::Model::Database::Alert
+For example "XAS::Model::Database::Alert" defines a table structure within 
+the database. The exported symbol would be "Alert". These exported symbols
+are shortcuts. It is easier to write "Alert->find" then
+"XAS::Model::Database::Alert->find".
 
 =head1 SEE ALSO
 
  DBIx::Class
 
- XAS::Base
- XAS::Class
- XAS::Constants
- XAS::Exception
- XAS::System
- XAS::Utils
-
- XAS::Apps::Base::Alerts
- XAS::Apps::Base::Collector
- XAS::Apps::Base::ExtractData
- XAS::Apps::Base::ExtractGlobals
- XAS::Apps::Base::RemoveData
- XAS::Apps::Database::Schema
- XAS::Apps::Templates::Daemon
- XAS::Apps::Templates::Generic
- XAS::Apps::Test::Echo::Client
- XAS::Apps::Test::Echo::Server
- XAS::Apps::Test::RPC::Client
- XAS::Apps::Test::RPC::Methods
- XAS::Apps::Test::RPC::Server
-
- XAS::Collector::Alert
- XAS::Collector::Base
- XAS::Collector::Connector
- XAS::Collector::Factory
-
- XAS::Lib::App
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
- XAS::Lib::Connector
- XAS::Lib::Counter
- XAS::Lib::Daemon::Logger
- XAS::Lib::Daemon::Logging
- XAS::Lib::Gearman::Admin
- XAS::Lib::Gearman::Admin::Status
- XAS::Lib::Gearman::Admin::Worker
- XAS::Lib::Gearman::Client
- XAS::Lib::Gearman::Client::Status
- XAS::Lib::Gearman::Worker
- XAS::Lib::Net::Client
- XAS::LIb::Net::Server
- XAS::Lib::RPC::JSON::Client
- XAS::Lib::RPC::JSON::Server
- XAS::Lib::Session
- XAS::Lib::Spool
-
- XAS::Model::Database
- XAS::Model::Database::Alert
- XAS::Model::Database::Counter
- XAS::Model::DBM
-
- XAS::Monitor::Base
- XAS::Monitor::Database
- XAS::Monitor::Database::Alert
-
- XAS::Scheduler::Base
-
- XAS::System::Alert
- XAS::System::Email
- XAS::System::Environment
- XAS::System::Logger
+ XAS
 
 =head1 AUTHOR
 

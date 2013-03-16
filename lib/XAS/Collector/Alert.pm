@@ -1,6 +1,6 @@
 package XAS::Collector::Alert;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use POE;
 use Try::Tiny;
@@ -21,22 +21,16 @@ sub store_data {
     my ($kernel, $self, $data, $ack) = @_[KERNEL,OBJECT,ARG0,ARG1];
 
     my $msg;
-    my ($buffer, $record);
+    my $buffer;
     my $alias = $self->alias;
     my $schema = $self->schema;
     my $connector = $self->connector;
 
-    $self->log('debug', 'notify: entering store_data()');
+    $self->log('debug', "$alias: entering store_data()");
 
-    ($record->{hostname}, 
-     $record->{datetime}, 
-     $record->{priority}, 
-     $record->{facility}, 
-     $record->{message}) = split("\036", $data);
-
-    $buffer = sprintf("hostname = %s; timestamp = %s; priority = %s; facility = %s; message = %s\n",
-        $record->{hostname}, $record->{datetime}, $record->{priority}, 
-        $record->{facility}, $record->{message}
+    $buffer = sprintf("%s: hostname = %s; timestamp = %s; priority = %s; facility = %s; message = %s",
+        $alias, $data->{hostname}, $data->{datetime}, $data->{priority}, 
+        $data->{facility}, $data->{message}
     );
 
     $self->log('debug', $buffer);
@@ -45,29 +39,29 @@ sub store_data {
 
         $schema->txn_do(sub {
 
-            $record->{revision} = 1;
-            Alert->create($schema, $record);
+            $data->{revision} = 1;
+            Alert->create($schema, $data);
 
         });
 
-        $self->log('info', $self->message('processed', $alias, 1, $record->{hostname}, $record->{datetime}));
+        $self->log('info', $self->message('processed', $alias, 1, $data->{hostname}, $data->{datetime}));
 
     } catch {
 
         my $ex = $_;
 
         my $key = {
-            HostName => $record->{hostname},
-            DateTime => $record->{datetime},
+            HostName => $data->{hostname},
+            DateTime => $data->{datetime},
         };
 
-        $self->exception_handler($ex, $key, $record);
+        $self->exception_handler($ex, $key, $data);
 
     };
 
     $kernel->call($connector, 'send_data', $ack);
 
-    $self->log('debug', 'notify: leaving store_notify()');
+    $self->log('debug', "$alias: leaving store_notify()");
 
 }
 
@@ -106,7 +100,7 @@ XAS::Collector::Alert - Perl extension for the XAS Environment
           Logger          => 'logger',
           Login           => 'xas',
           Passcode        => 'xas',
-          Queue           => '/queue/alert',
+          Queue           => '/queue/alerts',
           Types           => $types
       );
 
@@ -154,67 +148,7 @@ The acknowledgement to send back to the message queue server.
 
 =head1 SEE ALSO
 
- XAS::Base
- XAS::Class
- XAS::Constants
- XAS::Exception
- XAS::System
- XAS::Utils
-
- XAS::Apps::Base::Alerts
- XAS::Apps::Base::Collector
- XAS::Apps::Base::ExtractData
- XAS::Apps::Base::ExtractGlobals
- XAS::Apps::Base::RemoveData
- XAS::Apps::Database::Schema
- XAS::Apps::Templates::Daemon
- XAS::Apps::Templates::Generic
- XAS::Apps::Test::Echo::Client
- XAS::Apps::Test::Echo::Server
- XAS::Apps::Test::RPC::Client
- XAS::Apps::Test::RPC::Methods
- XAS::Apps::Test::RPC::Server
-
- XAS::Collector::Alert
- XAS::Collector::Base
- XAS::Collector::Connector
- XAS::Collector::Factory
-
- XAS::Lib::App
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
- XAS::Lib::Connector
- XAS::Lib::Counter
- XAS::Lib::Daemon::Logger
- XAS::Lib::Daemon::Logging
- XAS::Lib::Gearman::Admin
- XAS::Lib::Gearman::Admin::Status
- XAS::Lib::Gearman::Admin::Worker
- XAS::Lib::Gearman::Client
- XAS::Lib::Gearman::Client::Status
- XAS::Lib::Gearman::Worker
- XAS::Lib::Net::Client
- XAS::LIb::Net::Server
- XAS::Lib::RPC::JSON::Client
- XAS::Lib::RPC::JSON::Server
- XAS::Lib::Session
- XAS::Lib::Spool
-
- XAS::Model::Database
- XAS::Model::Database::Alert
- XAS::Model::Database::Counter
- XAS::Model::DBM
-
- XAS::Monitor::Base
- XAS::Monitor::Database
- XAS::Monitor::Database::Alert
-
- XAS::Scheduler::Base
-
- XAS::System::Alert
- XAS::System::Email
- XAS::System::Environment
- XAS::System::Logger
+ XAS
 
 =head1 AUTHOR
 

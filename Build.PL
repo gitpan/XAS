@@ -10,8 +10,8 @@ do { $_ =~ /^install_base=(.+)$/ ? $install_base = $1 : push @args, $_ } for (@A
 
 $install_base = rel2abs($install_base);
 
-my $sbin_dir = File::Spec->catdir( $install_base, 'sbin' );
-my $etc_dir = File::Spec->catdir( $install_base, 'etc' );
+my $sbin_dir  = File::Spec->catdir( $install_base, 'sbin' );
+my $etc_dir   = File::Spec->catdir( $install_base, 'etc' );
 my $initd_dir = File::Spec->catdir( $install_base, 'init.d' );
 
 my $class = Module::Build->subclass(code => <<'EOC');
@@ -30,10 +30,23 @@ my $class = Module::Build->subclass(code => <<'EOC');
 
         print "\nInstalling XAS to $base...\n";
 
+        my $ret  = $self->SUPER::ACTION_install( @_ );
+
+        $self->dispatch('post_install');
+
+        return $ret;
+
+    }
+
+    sub ACTION_post_install {
+        my $self = shift;
+
+        my $base  = $self->{properties}{install_base};
+
+        # create xas owner/group 
+
         system('addgroup --system xas');
         system("adduser --system --ingroup xas --home $base xas");
-
-        my $ret  = $self->SUPER::ACTION_install( @_ );
 
         # create some directories
 
@@ -46,17 +59,21 @@ my $class = Module::Build->subclass(code => <<'EOC');
         my $spool = catfile($base, 'var', 'spool');
         mkdir $spool unless (-e $spool);
 
+        my $alerts = catfile($base, 'var', 'spool', 'alerts');
+        mkdir $alerts unless (-e $alerts);
+
         my $log = catfile($base, 'var', 'log');
         mkdir $log unless (-e $log);
 
         my $run = catfile($base, 'var', 'run');
         mkdir $run unless (-e $run);
 
-        # set ownership on the files/directories
+        # set ownership/permissions on the files/directories
 
         system("chown -R xas.xas $base");
+        system("chmod 0777 $alerts");
 
-        return $ret;
+       return $self;
 
     }
 
@@ -227,9 +244,34 @@ my $class = Module::Build->subclass(code => <<'EOC');
             $fh->print("\n");
             $fh->print("[collector: alert]\n");
             $fh->print("alias = alert\n");
-            $fh->print("queue = /queue/alerts\n");
             $fh->print("packet-type = xas-alert\n");
             $fh->print("module = XAS::Collector::Alert\n");
+            $fh->print("\n");
+
+            undef $fh;
+
+        } else {
+
+            print "Unable to open $file\n"
+
+        }
+
+        $file = catfile('blib', 'etc', 'xas-spooler.ini');
+
+        if (my $fh = IO::File->new("> $file")) {
+
+            $fh->print(";\n");
+            $fh->print("; File: xas-spooler.ini\n");
+            $fh->print("; By  : Kevin Esteb\n");
+            $fh->print("; Date: 15-Aug-2012\n");
+            $fh->print(";\n");
+            $fh->print("; Configuration file for xas/sbin/xas-spooler.pl\n");
+            $fh->print(";\n");
+            $fh->print("\n");
+            $fh->print("[spooler: alert]\n");
+            $fh->print("alias = alerts\n");
+            $fh->print("directory = alerts\n");
+            $fh->print("packet-type = xas-alert\n");
             $fh->print("\n");
 
             undef $fh;
@@ -325,6 +367,41 @@ my $class = Module::Build->subclass(code => <<'EOC');
 
         }
 
+        $file = catfile('blib', 'sbin', 'xas-spooler');
+
+        if (my $fh = IO::File->new("> $file")) {
+
+            $fh->print("#!/bin/sh\n");
+            $fh->print("#\n");
+            $fh->print("# File: xas-spooler\n");
+            $fh->print("# Date: 13-Feb-2012\n");
+            $fh->print("# By  : Kevin Esteb\n");
+            $fh->print("#\n");
+            $fh->print("# This procedure will wrap the xas-spooler command with the proper environment.\n");
+            $fh->print("#\n");
+            $fh->print("\n");
+            $fh->print("PROGRAM=\"$base/sbin/xas-spooler.pl\"\n");
+            $fh->print("\n");
+            $fh->print("# Some simple tests\n");
+            $fh->print("\n");
+            $fh->print("[ -f \$PROGRAM ] || exit 0\n");
+            $fh->print("[ -f $base/etc/environment ] || exit 0\n");
+            $fh->print("\n");
+            $fh->print(". $base/etc/environment\n");
+            $fh->print("\n");
+            $fh->print("\$PROGRAM \$1 \$2 \$3\n");
+            $fh->print("\n");
+
+            undef $fh;
+
+            $self->make_executable($file);
+
+        } else {
+
+            print "Unable to open $file\n"
+
+        }
+
         while (my ($from, $to) = each %$files) {
 
             $to = catfile('blib', $to);
@@ -350,6 +427,71 @@ my $class = Module::Build->subclass(code => <<'EOC');
             $result = $self->copy_if_modified(from => $from, to => $to);
 
         }
+
+        return $self;
+
+    }
+
+    sub process_tmp_files {
+        my $self = shift;
+
+        my $tmp = catfile('blib', 'tmp');
+        mkdir $tmp unless (-e $tmp);
+
+        return $self;
+
+    }
+        
+    sub process_spool_files {
+        my $self = shift;
+
+        my $tmp = catfile('blib', 'var');
+        mkdir $tmp unless (-e $tmp);
+
+        $tmp = catfile('blib', 'var', 'spool');
+        mkdir $tmp unless (-e $tmp);
+
+        return $self;
+
+    }
+
+    sub process_run_files {
+        my $self = shift;
+
+        my $tmp = catfile('blib', 'var');
+        mkdir $tmp unless (-e $tmp);
+
+        $tmp = catfile('blib', 'var', 'run');
+        mkdir $tmp unless (-e $tmp);
+
+        return $self;
+
+    }
+
+    sub process_log_files {
+        my $self = shift;
+
+        my $tmp = catfile('blib', 'var');
+        mkdir $tmp unless (-e $tmp);
+
+        $tmp = catfile('blib', 'var', 'log');
+        mkdir $tmp unless (-e $tmp);
+
+        return $self;
+
+    }
+
+    sub process_alert_files {
+        my $self = shift;
+
+        my $tmp = catfile('blib', 'var');
+        mkdir $tmp unless (-e $tmp);
+
+        $tmp = catfile('blib', 'var', 'spool');
+        mkdir $tmp unless (-e $tmp);
+
+        $tmp = catfile('blib', 'var', 'spool', 'alerts');
+        mkdir $tmp unless (-e $tmp);
 
         return $self;
 
@@ -413,11 +555,11 @@ my $builder = $class->new(
 );
 
 $builder->notes('mqserver' => $builder->prompt('Enter your STOMP MQ Server', 'mq.example.com'));
-$builder->notes('mqport' => $builder->prompt('Enter the STOMP MQ Port', '61613'));
+$builder->notes('mqport'   => $builder->prompt('Enter the STOMP MQ Port', '61613'));
 $builder->notes('mxserver' => $builder->prompt('Enter your Mail Server', 'mail.example.com'));
-$builder->notes('mxport' => $builder->prompt('Enter the Mail server port', '25'));
-$builder->notes('host' => $builder->prompt('Enter this hosts name', 'localhost'));
-$builder->notes('domain' => $builder->prompt('Enter this hosts domain', 'example.com'));
+$builder->notes('mxport'   => $builder->prompt('Enter the Mail server port', '25'));
+$builder->notes('host'     => $builder->prompt('Enter this hosts name', 'localhost'));
+$builder->notes('domain'   => $builder->prompt('Enter this hosts domain', 'example.com'));
 
 $builder->notes('dbname' => $builder->prompt('Enter the database name', 'XAS'));
 $builder->notes('dbuser' => $builder->prompt('Enter the database user', 'xas'));

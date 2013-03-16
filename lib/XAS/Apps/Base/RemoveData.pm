@@ -97,14 +97,9 @@ Defines the dump file to use.
 
 =head1 SEE ALSO
 
- pg_extract_data.pl
- pg_remove_data.pl
- pg_extract_global.pl
+ bin/pg_remove_data.pl
 
- XAS::Lib::App
-
- XAS::Apps::Base::ExtractData
- XAS::Apps::Base::ExtractGlobals
+ XAS
 
 =head1 AUTHOR
 

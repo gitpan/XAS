@@ -13,7 +13,7 @@ use XAS::Class
   version   => $VERSION,
   base      => 'XAS::Base',
   import    => 'class CLASS',
-  accessors => 'log alert alerts env pid xdebug',
+  accessors => 'log alert alerts pid xdebug',
   vars => {
       script => '',
       PARAMS => {
@@ -170,22 +170,15 @@ sub _setup {
 
     # initialize the basic environment
 
-    $self->{env}   = XAS::System->module('environment');
-    $self->{alert} = XAS::System->module(
-        alert => {
-            -server   => $self->env->mqserver,
-            -port     => $self->env->mqport,
-            -hostname => $self->env->host,
-        }
-    );
+    $self->{alert} = XAS::System->module('alert');
 
 }
 
 sub _class_options {
     my $self = shift;
-    
+
     $self->{alerts} = 1;
-    
+
     return {
         'debug'    => \$self->{xdebug},
         'alerts!'  => \$self->{alerts},
@@ -195,7 +188,7 @@ sub _class_options {
     };
 
 }
-    
+
 sub _parse_cmdline {
     my ($self, $defaults, $params) = @_;
 
@@ -271,12 +264,12 @@ Example
 
     my $app = XAS::Lib::App->new(
        -options => [
-           { -logfile => 'test.log' }
+           { 'logfile=s' => 'test.log' }
        ]
     );
 
 This will then create an accessor named "logfile" that will return the value, 
-which may be the supplied default or suppliced from the command line.
+which may be the supplied default or supplied from the command line.
 
 =item B<-facility>
 
@@ -295,9 +288,32 @@ default is to do so. Values of 'true', 'yes' or 1 will evaluate to TRUE.
 
 =head2 run
 
-This method sets up a global exception handler and calls main(). It will 
-return an exit code for the command line. By default this is 0 for success
-and 1 for failure. This can be overridden in the exit_handler() method.
+This method sets up a global exception handler and calls main(). The main() 
+method will be passed one parameter: an initialised handle to this class.
+
+Example
+
+    sub main {
+        my $self = shift;
+
+        $self->log->debug('in main');
+
+    }
+
+=over 4
+
+=item Exception Handling
+
+If an exception is caught, the global exception handler will send an alert, 
+write the exception to the log and returns an exit code of 1. 
+
+=item Normal Completiion
+
+When the procedure completes successfully, it will return an exit code of 0. 
+
+=back
+
+To change this behavior you would need to override the exit_handler() method.
 
 =head2 define_logging
 
@@ -399,7 +415,7 @@ This module handles the following command line options.
 
 This toggles debugging output.
 
-=head2 --alerts
+=head2 --[no]alerts
 
 This toggles sending alerts. They are on by default.
 
@@ -417,67 +433,7 @@ This prints out the version of the module.
 
 =head1 SEE ALSO
 
- XAS::Base
- XAS::Class
- XAS::Constants
- XAS::Exception
- XAS::System
- XAS::Utils
-
- XAS::Apps::Base::Alerts
- XAS::Apps::Base::Collector
- XAS::Apps::Base::ExtractData
- XAS::Apps::Base::ExtractGlobals
- XAS::Apps::Base::RemoveData
- XAS::Apps::Database::Schema
- XAS::Apps::Templates::Daemon
- XAS::Apps::Templates::Generic
- XAS::Apps::Test::Echo::Client
- XAS::Apps::Test::Echo::Server
- XAS::Apps::Test::RPC::Client
- XAS::Apps::Test::RPC::Methods
- XAS::Apps::Test::RPC::Server
-
- XAS::Collector::Alert
- XAS::Collector::Base
- XAS::Collector::Connector
- XAS::Collector::Factory
-
- XAS::Lib::App
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
- XAS::Lib::Connector
- XAS::Lib::Counter
- XAS::Lib::Daemon::Logger
- XAS::Lib::Daemon::Logging
- XAS::Lib::Gearman::Admin
- XAS::Lib::Gearman::Admin::Status
- XAS::Lib::Gearman::Admin::Worker
- XAS::Lib::Gearman::Client
- XAS::Lib::Gearman::Client::Status
- XAS::Lib::Gearman::Worker
- XAS::Lib::Net::Client
- XAS::LIb::Net::Server
- XAS::Lib::RPC::JSON::Client
- XAS::Lib::RPC::JSON::Server
- XAS::Lib::Session
- XAS::Lib::Spool
-
- XAS::Model::Database
- XAS::Model::Database::Alert
- XAS::Model::Database::Counter
- XAS::Model::DBM
-
- XAS::Monitor::Base
- XAS::Monitor::Database
- XAS::Monitor::Database::Alert
-
- XAS::Scheduler::Base
-
- XAS::System::Alert
- XAS::System::Email
- XAS::System::Environment
- XAS::System::Logger
+ XAS
 
 =head1 AUTHOR
 

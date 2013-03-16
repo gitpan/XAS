@@ -1,18 +1,25 @@
 #!perl -T
 
-use Test::More tests => 47;
+use Test::More tests => 57;
 
 BEGIN {
     use_ok( 'XAS::Class' )                        || print "Bail out!";
     use_ok( 'XAS::Constants' )                    || print "Bail out!";
     use_ok( 'XAS::System' )                       || print "Bail out!";
     use_ok( 'XAS::Utils' )                        || print "Bail out!";
+    use_ok( 'XAS::Apps::Base::Alerts' )           || print "Bail out!";
     use_ok( 'XAS::Apps::Base::Collector' )        || print "Bail out!";
     use_ok( 'XAS::Apps::Base::ExtractData' )      || print "Bail out!";
     use_ok( 'XAS::Apps::Base::ExtractGlobals' )   || print "Bail out!";
+    use_ok( 'XAS::Apps::Base::Spooler' )          || print "Bail out!";
     use_ok( 'XAS::Apps::Base::RemoveData' )       || print "Bail out!";
     use_ok( 'XAS::Apps::Templates::Daemon' )      || print "Bail out!";
     use_ok( 'XAS::Apps::Templates::Generic' )     || print "Bail out!";
+    use_ok( 'XAS::Apps::Test::Echo::Client' )     || print "Bail out!";
+    use_ok( 'XAS::Apps::Test::Echo::Server' )     || print "Bail out!";
+    use_ok( 'XAS::Apps::Test::RPC::Client' )      || print "Bail out!";
+    use_ok( 'XAS::Apps::Test::RPC::Methods' )     || print "Bail out!";
+    use_ok( 'XAS::Apps::Test::RPC::Server' )      || print "Bail out!";
     use_ok( 'XAS::Collector::Alert' )             || print "Bail out!";
     use_ok( 'XAS::Collector::Base' )              || print "Bail out!";
     use_ok( 'XAS::Collector::Connector' )         || print "Bail out!";
@@ -45,6 +52,9 @@ BEGIN {
     use_ok( 'XAS::Monitor::Database' )            || print "Bail out!";
     use_ok( 'XAS::Monitor::Database::Alert' )     || print "Bail out!";
     use_ok( 'XAS::Scheduler::Base' )              || print "Bail out!";
+    use_ok( 'XAS::Spooler::Connector' )           || print "Bail out!";
+    use_ok( 'XAS::Spooler::Factory' )             || print "Bail out!";
+    use_ok( 'XAS::Spooler::Processor' )           || print "Bail out!";
     use_ok( 'XAS::System::Alert' )                || print "Bail out!";
     use_ok( 'XAS::System::Email' )                || print "Bail out!";
     use_ok( 'XAS::System::Environment' )          || print "Bail out!";

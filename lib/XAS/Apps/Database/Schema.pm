@@ -60,8 +60,9 @@ This module will create a schema for the XAS database.
 
 =head1 SEE ALSO
 
- create_schema.pl
- XAS::Lib::App
+ bin/create_schema.pl
+
+ XAS
 
 =head1 AUTHOR
 

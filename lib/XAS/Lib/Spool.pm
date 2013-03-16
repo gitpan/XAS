@@ -20,11 +20,12 @@ use XAS::Class
                       my $p = shift;
                       my $ref = ref($p);
 
-                      return TRUE if ($ref && $p->isa('Badger::Filesystem::Directory'));
+                      return ($ref && $p->isa('Badger::Filesystem::Directory'));
 
                   }
               }
           },
+          -mask      => { optional => 1, default => 0664 },
           -extension => { optional => 1, default => '.pkt' },
           -seqfile   => { optional => 1, default => '.SEQ' },
           -lockfile  => { optional => 1, default => 'spool' },
@@ -308,6 +309,7 @@ sub sequence {
     my $fh;
     my $cnt;
     my $seqnum;
+    my $mask = $self->mask + 0;
     my $file = File($self->spooldir, $self->seqfile);
 
     try {
@@ -327,7 +329,7 @@ sub sequence {
             $fh->print("1");
             $fh->close;
 
-            $cnt = chmod(0664, $file);
+            $cnt = chmod($mask, $file);
             $self->throw_msg(
                 'xas.lib.spool.sequence.invperms', 
                 'invperms', 
@@ -359,6 +361,7 @@ sub write_packet {
 
     my $fh;
     my $cnt;
+    my $mask = $self->mask + 0;
     my $file = File($self->spooldir, $seqnum . $self->extension);
 
     try {
@@ -366,7 +369,7 @@ sub write_packet {
         $fh = $file->open("w");
         $fh->print($packet);
         $fh->close;
-        $cnt = chmod(0664, $file);
+        $cnt = chmod($mask, $file);
 
     } catch {
 
@@ -491,6 +494,10 @@ The extension to use on the spool file. Defaults to '.pkt'.
 
 The name of the sequence file to use. Defaults to '.SEQ'.
 
+=item B<-mask>
+
+The file permissions for any created file. Default 0664.
+
 =back
 
 =head2 clear
@@ -557,67 +564,7 @@ This method will get/set the current spool directory.
 
 =head1 SEE ALSO
 
- XAS::Base
- XAS::Class
- XAS::Constants
- XAS::Exception
- XAS::System
- XAS::Utils
-
- XAS::Apps::Base::Alerts
- XAS::Apps::Base::Collector
- XAS::Apps::Base::ExtractData
- XAS::Apps::Base::ExtractGlobals
- XAS::Apps::Base::RemoveData
- XAS::Apps::Database::Schema
- XAS::Apps::Templates::Daemon
- XAS::Apps::Templates::Generic
- XAS::Apps::Test::Echo::Client
- XAS::Apps::Test::Echo::Server
- XAS::Apps::Test::RPC::Client
- XAS::Apps::Test::RPC::Methods
- XAS::Apps::Test::RPC::Server
-
- XAS::Collector::Alert
- XAS::Collector::Base
- XAS::Collector::Connector
- XAS::Collector::Factory
-
- XAS::Lib::App
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
- XAS::Lib::Connector
- XAS::Lib::Counter
- XAS::Lib::Daemon::Logger
- XAS::Lib::Daemon::Logging
- XAS::Lib::Gearman::Admin
- XAS::Lib::Gearman::Admin::Status
- XAS::Lib::Gearman::Admin::Worker
- XAS::Lib::Gearman::Client
- XAS::Lib::Gearman::Client::Status
- XAS::Lib::Gearman::Worker
- XAS::Lib::Net::Client
- XAS::LIb::Net::Server
- XAS::Lib::RPC::JSON::Client
- XAS::Lib::RPC::JSON::Server
- XAS::Lib::Session
- XAS::Lib::Spool
-
- XAS::Model::Database
- XAS::Model::Database::Alert
- XAS::Model::Database::Counter
- XAS::Model::DBM
-
- XAS::Monitor::Base
- XAS::Monitor::Database
- XAS::Monitor::Database::Alert
-
- XAS::Scheduler::Base
-
- XAS::System::Alert
- XAS::System::Email
- XAS::System::Environment
- XAS::System::Logger
+ XAS
 
 =head1 AUTHOR
 

@@ -1,6 +1,6 @@
 package XAS::Collector::Factory;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Config::IniFiles;
 use Params::Validate ':all';
@@ -9,7 +9,8 @@ use XAS::Class
   version   => $VERSION,
   base      => 'XAS::Base Badger::Prototype',
   utils     => 'load_module',
-  accessors => 'collectors',
+  constants => 'XAS_QUEUE',
+  accessors => 'collectors queues types',
 ;
 
 Params::Validate::validation_options(
@@ -40,6 +41,8 @@ sub load {
     );
 
     my $cfg;
+    my @types;
+    my @queues;
     my @sections;
     my @collectors;
     my $filename = $p{'-configs'}->path;
@@ -62,6 +65,11 @@ sub load {
                 -logger    => $p{'-logger'},
             );
 
+            push(@types, {
+                $cfg->val($section, 'packet-type'),
+                $cfg->val($section, 'alias')
+            });
+            push(@queues, $cfg->val($section, 'queue', XAS_QUEUE));
             push(@collectors, $collector);
 
         }
@@ -76,6 +84,8 @@ sub load {
 
     }
 
+    $self->{types} = \@types;
+    $self->{queues} = \@queues;
     $self->{collectors} = \@collectors;
 
     return $self;
@@ -115,11 +125,11 @@ The configuraton file has the following cavets:
 
 =over 4
 
-=item o Item names are case sensitve.
+=item B<o> Item names are case sensitve.
 
-=item o A ";" indicates the start of a comment.
+=item B<o> A ";" indicates the start of a comment.
 
-=item  o The section header must be unique and start with "collector:".
+=item B<o> The section header must be unique and start with "collector:".
 
 =back
 
@@ -151,7 +161,7 @@ The module to load to handle this packet type.
 
 =item B<queue>
 
-The queue to listen on for packets.
+The queue to listen on for packets. Defaults to '/queue/xas'.
 
 =back
 
@@ -167,69 +177,13 @@ This loads the configuration file and starts the collectors.
 
 Returns a list of collectors.
 
+=head2 queues
+
+Returns a list of queues that will be listened on.
+
 =head1 SEE ALSO
 
- XAS::Base
- XAS::Class
- XAS::Constants
- XAS::Exception
- XAS::System
- XAS::Utils
-
- XAS::Apps::Base::Alerts
- XAS::Apps::Base::Collector
- XAS::Apps::Base::ExtractData
- XAS::Apps::Base::ExtractGlobals
- XAS::Apps::Base::RemoveData
- XAS::Apps::Database::Schema
- XAS::Apps::Templates::Daemon
- XAS::Apps::Templates::Generic
- XAS::Apps::Test::Echo::Client
- XAS::Apps::Test::Echo::Server
- XAS::Apps::Test::RPC::Client
- XAS::Apps::Test::RPC::Methods
- XAS::Apps::Test::RPC::Server
-
- XAS::Collector::Alert
- XAS::Collector::Base
- XAS::Collector::Connector
- XAS::Collector::Factory
-
- XAS::Lib::App
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
- XAS::Lib::Connector
- XAS::Lib::Counter
- XAS::Lib::Daemon::Logger
- XAS::Lib::Daemon::Logging
- XAS::Lib::Gearman::Admin
- XAS::Lib::Gearman::Admin::Status
- XAS::Lib::Gearman::Admin::Worker
- XAS::Lib::Gearman::Client
- XAS::Lib::Gearman::Client::Status
- XAS::Lib::Gearman::Worker
- XAS::Lib::Net::Client
- XAS::LIb::Net::Server
- XAS::Lib::RPC::JSON::Client
- XAS::Lib::RPC::JSON::Server
- XAS::Lib::Session
- XAS::Lib::Spool
-
- XAS::Model::Database
- XAS::Model::Database::Alert
- XAS::Model::Database::Counter
- XAS::Model::DBM
-
- XAS::Monitor::Base
- XAS::Monitor::Database
- XAS::Monitor::Database::Alert
-
- XAS::Scheduler::Base
-
- XAS::System::Alert
- XAS::System::Email
- XAS::System::Environment
- XAS::System::Logger
+ XAS
 
 =head1 AUTHOR
 

@@ -91,11 +91,9 @@ This specifies three options that may be on the command line. They are
 
 =head1 SEE ALSO
 
- XAS::Daemon::Logger
- XAS::Lib::App::Daemon
- XAS::Lib::Net::Server
- XAS::Lib::App::Daemon::POE
- XAS::Apps::Test::Echo::Client
+ sbin/echo-server.pl
+
+ XAS
 
 =head1 AUTHOR
 

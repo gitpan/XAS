@@ -58,11 +58,9 @@ within the XAS enviornment.
 
 =head1 SEE ALSO
 
- XAS::Lib::App
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
+ sbin/daemon-template.pl
 
- XAS::Apps::Templates::Daemon
+ XAS
 
 =head1 AUTHOR
 

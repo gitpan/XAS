@@ -111,8 +111,9 @@ The text to be "echoed" back.
 
 =head1 SEE ALSO
 
- XAS::Lib::App
- XAS::Apps::Test::Echo::Server
+ bin/echo-client.pl
+
+ XAS
 
 =head1 AUTHOR
 

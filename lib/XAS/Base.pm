@@ -5,16 +5,18 @@ use 5.8.8;
 our $VERSION = '0.01';
 our $EXCEPTION = 'XAS::Exception';
 
+use XAS::System;
 use XAS::Exception;
 use Params::Validate ':all';
 
 use XAS::Class
   base     => 'Badger::Base',
   version  => $VERSION,
+  accessors => 'env',
   messages => {
       exception     => "%s: %s",
-      dberror       => "a database error has occured: %s",
-      invparams     => "invalid paramters passed, reason: %s",
+      dberror       => "a database error has occurred: %s",
+      invparams     => "invalid parameters passed, reason: %s",
       nospooldir    => "no spool directory defined",
       noschema      => "no database schema was defined",
       unknownos     => "unknown OS: %s",
@@ -24,10 +26,10 @@ use XAS::Class
       undeliverable => "unable to send mail to %s; reason: %s",
       noserver      => "unable to connect to %s; reason: %s",
       nodelivery    => "unable to send message to %s; reason: %s",
-      sequence      => "unable to retrive sequence number from %s",
+      sequence      => "unable to retrieve sequence number from %s",
       write_packet  => "unable to write a packet to %s",
       read_packet   => "unable to read a packet from %s",
-      lock_error    => "unable to aquire a lock on %s",
+      lock_error    => "unable to acquire a lock on %s",
       invperms      => "unable to change file permissions on %s",
       badini        => "unable to load config file: %s",
       expiredacct   => 'this accounts expiration day has passed',
@@ -98,6 +100,7 @@ sub init {
     my %p = validate(@_, $params);
 
     $self->{config} = \%p;
+    $self->{env} = XAS::System->module('environment');
 
     no strict "refs";               # to register new methods in package
     no warnings;                    # turn off warnings
@@ -105,6 +108,9 @@ sub init {
     while (my ($key, $value) = each(%p)) {
 
         $key =~ s/^-//;
+
+        next if ($key eq 'env');
+
         $self->{$key} = $value;
 
         *$key = sub {
@@ -129,16 +135,29 @@ XAS::Base - The base class for the XAS environment
 =head1 SYNOPSIS
 
  use XAS::Class
-     version => '0.01',
-     base    => 'XAS::Base'
+   version => '0.01',
+   base    => 'XAS::Base',
+   vars => {
+       PARAMS => {}
+   }
  ;
 
 =head1 DESCRIPTION
 
-This module defines a base class for the XAS Environment and inerits from
-Badger::Base.
+This module defines a base class for the XAS Environment and inherits from
+L<Badger::Base|Badger::Base>. The package variable $PARAMS is used to hold 
+the parameters that this class uses for initialization. The parameters can be 
+changed or extended by inheriting classes. This is functionality provided by 
+L<Badger::Class|Badger::Class>. The parameters are validated using 
+L<Params::Validate|Params::Validate>. Any parameters defined in $PARAMS 
+automagically become accessors toward their values.
 
 =head1 METHODS
+
+=head2 new($parameters)
+
+This is used to initialized the class. It takes various parameters defined by
+the $PARAMS package variable. 
 
 =head2 config($item)
 
@@ -156,7 +175,8 @@ The item you want to return,
 
 =head2 validation_exception($params, $class)
 
-This method is used by Params::Validate to display it's failure  message.
+This method is used by L<Params::Validate|Params::Validate> to display it's 
+failure message.
 
 =over 4
 
@@ -170,69 +190,13 @@ The class that it happened in.
 
 =back
 
+=head2 env
+
+A handle to L<XAS::System::Environment|XAS::System::Environment>.
+
 =head1 SEE ALSO
 
- XAS::Base
- XAS::Class
- XAS::Constants
- XAS::Exception
- XAS::System
- XAS::Utils
-
- XAS::Apps::Base::Alerts
- XAS::Apps::Base::Collector
- XAS::Apps::Base::ExtractData
- XAS::Apps::Base::ExtractGlobals
- XAS::Apps::Base::RemoveData
- XAS::Apps::Database::Schema
- XAS::Apps::Templates::Daemon
- XAS::Apps::Templates::Generic
- XAS::Apps::Test::Echo::Client
- XAS::Apps::Test::Echo::Server
- XAS::Apps::Test::RPC::Client
- XAS::Apps::Test::RPC::Methods
- XAS::Apps::Test::RPC::Server
-
- XAS::Collector::Alert
- XAS::Collector::Base
- XAS::Collector::Connector
- XAS::Collector::Factory
-
- XAS::Lib::App
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
- XAS::Lib::Connector
- XAS::Lib::Counter
- XAS::Lib::Daemon::Logger
- XAS::Lib::Daemon::Logging
- XAS::Lib::Gearman::Admin
- XAS::Lib::Gearman::Admin::Status
- XAS::Lib::Gearman::Admin::Worker
- XAS::Lib::Gearman::Client
- XAS::Lib::Gearman::Client::Status
- XAS::Lib::Gearman::Worker
- XAS::Lib::Net::Client
- XAS::LIb::Net::Server
- XAS::Lib::RPC::JSON::Client
- XAS::Lib::RPC::JSON::Server
- XAS::Lib::Session
- XAS::Lib::Spool
-
- XAS::Model::Database
- XAS::Model::Database::Alert
- XAS::Model::Database::Counter
- XAS::Model::DBM
-
- XAS::Monitor::Base
- XAS::Monitor::Database
- XAS::Monitor::Database::Alert
-
- XAS::Scheduler::Base
-
- XAS::System::Alert
- XAS::System::Email
- XAS::System::Environment
- XAS::System::Logger
+ XAS
 
 =head1 AUTHOR
 

@@ -149,8 +149,9 @@ This will list the status of the rpc server.
 
 =head1 SEE ALSO
 
- XAS::Lib::App
- XAS::Apps::Test::RPC::Server
+ bin/rpc-client.pl
+
+ XAS
 
 =head1 AUTHOR
 

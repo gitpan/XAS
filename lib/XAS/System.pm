@@ -42,8 +42,32 @@ Either of the above statements will load the XAS::System::Environment module.
 This module is a factory system for the XAS environment. It will load and
 initialize modules on demand. The advantage is that you don't need to load
 all your modules at the beginning of your program. You also don't need to
-know where individual modules live. And this system can provide nice alias 
+know where individual modules live. And this system can provide a nice alias 
 for long module names. This should lead to cleaner more readable programs.
+
+=head1 SHORTCUTS
+
+The following are shortcut names that can be used.
+
+=head2 logger
+
+This will load the XAS::System::Logger module.
+
+=head2 alert
+
+This will load the XAS::System::Alert module.
+
+=head2 email
+
+This will load the XAS::System::Email module.
+
+=head2 enviroment
+
+This will load the XAS::System::Environment module.
+
+=head2 spool
+
+This will load the XAS::Lib::Spool module.
 
 =head1 METHODS
 
@@ -53,67 +77,7 @@ This method loads the named module and passes any parameters to that module.
 
 =head1 SEE ALSO
 
- XAS::Base
- XAS::Class
- XAS::Constants
- XAS::Exception
- XAS::System
- XAS::Utils
-
- XAS::Apps::Base::Alerts
- XAS::Apps::Base::Collector
- XAS::Apps::Base::ExtractData
- XAS::Apps::Base::ExtractGlobals
- XAS::Apps::Base::RemoveData
- XAS::Apps::Database::Schema
- XAS::Apps::Templates::Daemon
- XAS::Apps::Templates::Generic
- XAS::Apps::Test::Echo::Client
- XAS::Apps::Test::Echo::Server
- XAS::Apps::Test::RPC::Client
- XAS::Apps::Test::RPC::Methods
- XAS::Apps::Test::RPC::Server
-
- XAS::Collector::Alert
- XAS::Collector::Base
- XAS::Collector::Connector
- XAS::Collector::Factory
-
- XAS::Lib::App
- XAS::Lib::App::Daemon
- XAS::Lib::App::Daemon::POE
- XAS::Lib::Connector
- XAS::Lib::Counter
- XAS::Lib::Daemon::Logger
- XAS::Lib::Daemon::Logging
- XAS::Lib::Gearman::Admin
- XAS::Lib::Gearman::Admin::Status
- XAS::Lib::Gearman::Admin::Worker
- XAS::Lib::Gearman::Client
- XAS::Lib::Gearman::Client::Status
- XAS::Lib::Gearman::Worker
- XAS::Lib::Net::Client
- XAS::LIb::Net::Server
- XAS::Lib::RPC::JSON::Client
- XAS::Lib::RPC::JSON::Server
- XAS::Lib::Session
- XAS::Lib::Spool
-
- XAS::Model::Database
- XAS::Model::Database::Alert
- XAS::Model::Database::Counter
- XAS::Model::DBM
-
- XAS::Monitor::Base
- XAS::Monitor::Database
- XAS::Monitor::Database::Alert
-
- XAS::Scheduler::Base
-
- XAS::System::Alert
- XAS::System::Email
- XAS::System::Environment
- XAS::System::Logger
+ XAS
 
 =head1 AUTHOR
 
