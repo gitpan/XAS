@@ -205,7 +205,7 @@ are shortcuts. It is easier to write "Alert->find" then
 
  DBIx::Class
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

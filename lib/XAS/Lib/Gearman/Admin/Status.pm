@@ -106,7 +106,7 @@ Returns the number that are available.
  Gearman::XS::Client
  Gearman::XS::Worker
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

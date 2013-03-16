@@ -270,7 +270,7 @@ The received STOMP frame.
 
  POE::Component::Client::Stomp
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

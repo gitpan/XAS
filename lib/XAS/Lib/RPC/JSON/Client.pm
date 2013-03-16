@@ -189,7 +189,7 @@ A hashref of the parameters to be passed to the method.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

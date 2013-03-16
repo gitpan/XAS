@@ -115,7 +115,7 @@ Defines the database schema to use.
 
  bin/pg_extract_data.pl
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

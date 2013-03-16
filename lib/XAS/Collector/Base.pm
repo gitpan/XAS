@@ -295,7 +295,7 @@ This event will trigger the execution of the cleanup() method.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

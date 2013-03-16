@@ -77,7 +77,7 @@ This method loads the named module and passes any parameters to that module.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

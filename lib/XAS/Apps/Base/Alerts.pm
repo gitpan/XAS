@@ -90,7 +90,7 @@ XAS::Lib::App::Daemon::POE.
 
  sbin/xas-alerts.pl
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

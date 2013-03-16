@@ -99,7 +99,7 @@ Defines the dump file to use.
 
  bin/pg_remove_data.pl
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

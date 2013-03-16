@@ -211,7 +211,7 @@ __END__
 
 =head1 NAME
 
-XAS::Spooler::Processor - Perl extension for the DDC Environment
+XAS::Spooler::Processor - Perl extension for the XAS environment
 
 =head1 SYNOPSIS
 
@@ -258,8 +258,7 @@ Removes the unneeded file from the directory.
 
 =head1 SEE ALSO
 
- XAS
- XAS::DDC
+L<XAS|XAS>
 
 =head1 AUTHOR
 

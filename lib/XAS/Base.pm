@@ -196,7 +196,7 @@ A handle to L<XAS::System::Environment|XAS::System::Environment>.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

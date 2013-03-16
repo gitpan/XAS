@@ -151,7 +151,7 @@ This will list the status of the rpc server.
 
  bin/rpc-client.pl
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

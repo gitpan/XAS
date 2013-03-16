@@ -1,6 +1,6 @@
 package XAS::Docs::Configuration;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 1;
 
@@ -42,6 +42,11 @@ can be changed to match your environment.
 This file is used to configure the collector. The collector is used to
 retrieve messages from the message queue.
 
+=item B</opt/xas/etc/xas-spooler.ini>
+
+This file is used to configure the spooler. The spooler is used to
+send messages to the message queue.
+
 =back
 
 =head2 Database Initialization
@@ -54,7 +59,7 @@ is dependent on that system. Additional help can be had with:
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

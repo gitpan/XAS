@@ -393,7 +393,7 @@ This accessor returns the effective username of the current process.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

@@ -62,7 +62,7 @@ This module will create a schema for the XAS database.
 
  bin/create_schema.pl
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

@@ -234,7 +234,7 @@ This method will start the scanning process of the spool processors.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

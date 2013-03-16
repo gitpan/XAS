@@ -177,7 +177,7 @@ Passing that method the supplied log entry.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

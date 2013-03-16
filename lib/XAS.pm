@@ -1,6 +1,6 @@
 package XAS;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 1;
 
@@ -28,7 +28,7 @@ communications, notifications and database access in distributed applications.
 
 =item B<L<Base Modules|XAS::Docs::Base>>
 
-=item B<Theory of Operation|XAS::Docs::Theory>
+=item B<L<Theory of Operation|XAS::Docs::Theory>>
 
 =back
 
@@ -47,6 +47,12 @@ available.
  XAS::Docs::Objectives
  XAS::Docs::Startup
  XAS::Docs::Theory
+
+=head1 SUPPORT 
+
+The latest and greatest is always available at:
+
+    http://svn.kesteb.us/repos/XAS-Base
 
 =head1 AUTHOR
 

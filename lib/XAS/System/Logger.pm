@@ -301,7 +301,7 @@ Example
 
  Badger::Log
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

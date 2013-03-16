@@ -125,7 +125,7 @@ Returns the denominator of the status.
  Gearman::XS::Client
  Gearman::XS::Worker
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

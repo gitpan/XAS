@@ -113,7 +113,7 @@ The text to be "echoed" back.
 
  bin/echo-client.pl
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

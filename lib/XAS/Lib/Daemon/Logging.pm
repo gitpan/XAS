@@ -129,7 +129,7 @@ Send "debug" log information to the logger.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

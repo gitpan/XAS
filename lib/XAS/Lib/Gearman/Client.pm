@@ -304,7 +304,7 @@ The id of the background job.
  Gearman::XS::Client
  Gearman::XS::Worker
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

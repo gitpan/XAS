@@ -55,6 +55,7 @@ within the XAS enviornment.
 
 =head1 CONFIGURATION
 
+Place your configuration informaion here.
 
 =head1 SEE ALSO
 

@@ -564,7 +564,7 @@ This method will get/set the current spool directory.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

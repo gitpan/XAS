@@ -666,7 +666,7 @@ The parameters.
 
 =back
 
-=head2 init_module
+=head2 init_module($module, $options)
 
 This routine will load and initialize a module. It takes one required parameter
 and one optinal parameter.
@@ -683,7 +683,7 @@ A hashref of optional options to use with the module.
 
 =back
 
-=head2 load_module
+=head2 load_module($module)
 
 This routine will load a module. 
 
@@ -697,9 +697,9 @@ The name of the module.
 
 =head1 SEE ALSO
 
- Badger::Utils
+L<Badger::Utils|Badger::Utils>
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

@@ -382,7 +382,7 @@ The name of the queue for the worker request.
  Gearman::XS::Client
  Gearman::XS::Worker
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

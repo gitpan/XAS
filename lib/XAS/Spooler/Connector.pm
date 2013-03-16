@@ -260,7 +260,7 @@ This event will format the data to be sent to the message queue server.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

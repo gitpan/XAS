@@ -19,7 +19,7 @@ stack tracing on by default.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

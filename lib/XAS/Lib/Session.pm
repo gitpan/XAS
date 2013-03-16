@@ -359,7 +359,7 @@ They should only be used with caution.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

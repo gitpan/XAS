@@ -92,7 +92,7 @@ This specifies three options that may be on the command line. They are
 
  sbin/rpc-server.pl
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

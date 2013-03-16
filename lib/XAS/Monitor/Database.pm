@@ -188,7 +188,7 @@ This is triggered by the schedule and calls the monitor() method.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

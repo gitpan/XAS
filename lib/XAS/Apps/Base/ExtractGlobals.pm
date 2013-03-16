@@ -108,7 +108,7 @@ Defines which database to extract data from.
 
  bin/pg_extract_global.pl
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

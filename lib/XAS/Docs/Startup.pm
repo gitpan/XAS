@@ -1,6 +1,6 @@
 package XAS::Docs::Startup;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 1;
 
@@ -35,6 +35,11 @@ an email is sent off to the approbiate people.
 This process monitors the queues on the message queue server. When messages 
 arrive they are processed and stored in the database.
 
+=item B<xas-spooler.debian>
+
+This process monitors the spool directories. When a spool file appears 
+they are processed and sent to the message queue server.
+
 =back
 
 If you are not on a Debian derived system you will need to port these 
@@ -47,7 +52,7 @@ alerts that may be generated.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

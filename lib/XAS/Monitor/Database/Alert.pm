@@ -126,7 +126,7 @@ XAS::Monitor::Database::Alert - A Perl extension for the XAS environment
 
 =head1 DESCRIPTION
 
-This module inherits from XAS::Monitor::Database and provides the "monitor"
+This module inherits from L<XAS::Monitor::Database|XAS::Monitor::Database> and provides the "monitor"
 method.
 
 =head1 METHODS
@@ -172,7 +172,7 @@ A reference to it's self.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

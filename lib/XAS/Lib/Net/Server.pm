@@ -573,7 +573,7 @@ The POE wheel to use.
 
  POE::Filter::Line
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

@@ -433,7 +433,7 @@ This prints out the version of the module.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

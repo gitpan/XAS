@@ -130,7 +130,7 @@ The message text for the message
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

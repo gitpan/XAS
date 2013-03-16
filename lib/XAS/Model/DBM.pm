@@ -629,7 +629,7 @@ The record used to update the table entry.
 
  DBIx::Class
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

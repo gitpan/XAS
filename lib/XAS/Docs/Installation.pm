@@ -35,7 +35,7 @@ of either is beyond the scope of this document.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

@@ -131,7 +131,7 @@ L<Badger::Constants|Badger::Constants> and also provides those constants.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

@@ -271,7 +271,7 @@ The exception to handle.
 
  POE::Component::Client::Stomp
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

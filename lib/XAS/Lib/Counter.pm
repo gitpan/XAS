@@ -220,7 +220,7 @@ The name of the counter.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

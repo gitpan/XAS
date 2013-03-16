@@ -71,13 +71,14 @@ __END__
 
 =head1 NAME
 
-XAS::Apps::Base::Collector - This module will collect alerts
+XAS::Apps::Base::Collector - This module will process alerts
 
 =head1 SYNOPSIS
 
  use XAS::Apps::Base::Collector;
 
  my $app = XAS::Apps::Base::Collector->new(
+     -throws => 'xas-collector',
      -options => [
          { 'host=s', '' },
          { 'port=s', '' },
@@ -89,26 +90,49 @@ XAS::Apps::Base::Collector - This module will collect alerts
 
 =head1 DESCRIPTION
 
-This module will collect alerts from the message queue. It inherits from
-XAS::Lib::App::Daemon::POE.
+This module will process alerts from the message queue. It inherits from
+L<XAS::Lib::App::Daemon::POE|XAS::Lib::App::Daemon::POE>.
 
-=head1 METHODS
+=head1 CONFIGURATION
 
-=head2 new
+=head2 -throws
 
-This method will initialize the module and accepts these parameters.
+This sets the default facility for exceptions.
+
+=head2 -options
+
+This provides three additional options. There format is what can be supplied to
+L<Getopt::Long>. The defaults are the supplied values. Those values be can 
+overridden on the command line.
 
 =over 4
 
-=item B<-options>
+=item B<'host=s'>
 
-This specifies three options that may be on the command line. They are
+This is the host that the message queue is on.
 
-    port    - the port to use on the host.
-    host    - the host the message queue resides on.
-    configs - the configuration file to use.
+=item B<'port=s'>
 
-All of these options will default to what is defined in L<XAS::System::Environment|XAS::System::Environment>.
+This is the port that it listens on.
+
+=item B<'configs=s'>
+
+This is a configuration file that lists all of the collector processes. The
+configuration file has the following format:
+
+    [collector: alert]
+    alias = alert
+    queue = /queue/alert
+    packet-type = xas-alert
+    module = XAS::Collector::Alert
+
+This uses the standard .ini format. The entries mean the following:
+
+    [controller: xxxx] - The beginning of the stanza.
+    alias              - The alias for this POE session.
+    queue              - The message queue to listen on, defaults to '/queue/xas'.
+    packet-type        - The message type expected.
+    module             - The module that handles that message type.
 
 =back
 
@@ -116,7 +140,7 @@ All of these options will default to what is defined in L<XAS::System::Environme
 
  sbin/xas-collector.pl
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

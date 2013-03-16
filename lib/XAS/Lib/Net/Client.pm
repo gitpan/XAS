@@ -185,7 +185,7 @@ This reads a "packet" from the socket.
 
 =head1 SEE ALSO
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 

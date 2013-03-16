@@ -170,7 +170,7 @@ Optional options to be passed to gearman.
  Gearman::XS::Client
  Gearman::XS::Worker
 
- XAS
+L<XAS|XAS>
 
 =head1 AUTHOR
 
