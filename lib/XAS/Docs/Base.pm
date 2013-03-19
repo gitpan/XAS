@@ -64,7 +64,7 @@ The following are the modules provided with the system.
 
 =over 4
 
-=item L<XAS::Apps::Test::Echo::Client|XAS::Apps::Test::Echo>
+=item L<XAS::Apps::Test::Echo::Client|XAS::Apps::Test::Echo::Client>
 
 =item L<XAS::Apps::Test::Echo::Server|XAS::Apps::Test::Echo::Server>
 
@@ -174,7 +174,7 @@ The following are the modules provided with the system.
 
 =over 4
 
-=item L<XAS::System::Alert|XAS::Sysetem::Alert>
+=item L<XAS::System::Alert|XAS::System::Alert>
 
 =item L<XAS::System::Email|XAS::System::Email>
 

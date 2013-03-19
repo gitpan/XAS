@@ -107,14 +107,14 @@ And the following levels are defined: INFO, WARN, ERROR, FATAL and DEBUG
 
 Communications are important within a distributed application. This system 
 uses a message queue. The message queue needs to be STOMP v1.0 compatiable. 
-RabbitMQ and POE::Component::MessageQueue have been tested. All messaging 
-uses the tried and true, store and forward strategy. The message queues 
-themselves should be configured to store messages on disk when a large 
-backlog happens. Using this methodology ensures that messages are not lost. 
-The messages themselves are in a standard JSON format. When a message queue 
-won't work, a RPC mechanism using JSONRPC v2.0 has been defined. An effort 
-has been made to use standard text based protocals so that other systems 
-and languages can easily intergrate with this one.
+RabbitMQ and L<POE::Component::MessageQueue|POE::Component::MessageQueue> have
+been tested. All messaging uses the tried and true, store and forward strategy.
+The message queues themselves should be configured to store messages on disk 
+when a large backlog happens. Using this methodology ensures that messages are 
+not lost. The messages themselves are in a standard JSON format. When a 
+message queue won't work, a RPC mechanism using JSONRPC v2.0 has been defined. 
+An effort has been made to use standard text based protocals so that other 
+systems and languages can easily intergrate with this one.
 
 =head2 Notifications
 

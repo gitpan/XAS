@@ -4,6 +4,7 @@ bin/echo-client.pl
 bin/pg_extract_data.pl
 bin/pg_extract_global.pl
 bin/pg_remove_data.pl
+bin/rpc-client.pl
 Build.PL
 Changes
 ignore.txt
@@ -23,6 +24,7 @@ lib/XAS/Apps/Templates/Generic.pm
 lib/XAS/Apps/Test/Echo/Client.pm
 lib/XAS/Apps/Test/Echo/Server.pm
 lib/XAS/Apps/Test/RPC/Client.pm
+lib/XAS/Apps/Test/RPC/Methods.pm
 lib/XAS/Apps/Test/RPC/Server.pm
 lib/XAS/Class.pm
 lib/XAS/Constants.pm
