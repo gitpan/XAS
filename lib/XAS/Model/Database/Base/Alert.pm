@@ -1,4 +1,4 @@
-package XAS::Model::Database::Alert;
+package XAS::Model::Database::Base::Alert;
 
 our $VERSION = '0.01';
 

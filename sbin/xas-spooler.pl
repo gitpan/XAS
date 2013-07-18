@@ -14,7 +14,7 @@
 #
 # PARAMETERS:  --host      Where the Message Queue server resides.
 #              --port      The port for that server.
-#              --config    The config file to use.
+#              --configs   The config file to use.
 #              --logfile   The log file to use.
 #              --pidfile   The pid file to use.
 #              --daemon    Run as a daemon.
@@ -69,7 +69,7 @@ xas-spooler.pl [--help] [--debug] [--manual] [--version]
  options:
    --host     where the Message Queue server resides
    --port     the port for that server
-   --config   the config file to use
+   --configs  the config file to use
    --logfile  the log file to use
    --pidfile  the pid file to use
    --help     outputs simple help text

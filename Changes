@@ -6,7 +6,20 @@ Revision history for XAS
 0.02    13-Mar-2013 Kevin L. Esteb
         Fixed some documentation problems.
         Added spooler stuff.
-        
+
 0.03    16-Mar-2013 Kevin L. Esteb
-        Fixed some documentation problems.
+        Fixed some documentation problems. Doesn't display correctly
+          on CPAN.
+
+0.04    17-Mar-2013 Kevin L. Esteb
+        Fixed some documentation problems. Doesn't display correctly
+          on CPAN.
+
+0.05    13-Jun-2013 Kevin L. Esteb
+        Added STOMP support, ported POE::Component::Client::Stomp,
+          POE::Component::Client::Stomp::Utils and
+          POE::Filter::Stomp to XAS.
+        Added tests for STOMP support.
+        Updated various modules for STOMP support.
+        Ported Supervisor into the framework
 

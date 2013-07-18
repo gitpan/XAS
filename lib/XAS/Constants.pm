@@ -25,6 +25,29 @@ use Badger::Class
       WAITING    => 'Waiting',
       SUSPENDED  => 'Suspended',
   
+      # Supervisor
+
+      START      => 'start',
+      STOP       => 'stop',
+      EXIT       => 'exit',
+      RELOAD     => 'reload',
+      STAT       => 'stat',
+      #
+      RUNNING    => 'running',
+      ALIVE      => 'alive',
+      DEAD       => 'dead',
+      NOCMD      => 'nocmd',
+      #
+      STOPPED    => 'stopped',
+      STARTED    => 'started',
+      RELOADED   => 'reloaded',
+      STATED     => 'stated',
+      EXITED     => 'exited',
+      #
+      SHUTDOWN   => 'shutdown',
+      KILLME     => 'killme',
+      PROC_ROOT  => '/proc',
+
       # Workman
 
       JOBSTATS  => '/queue/jobstats',
@@ -67,14 +90,18 @@ use Badger::Class
                RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL RPC_ERR_SERVER 
                RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN RPC_ERR_APP LABEL_F1 LABEL_F2 
                LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6 LABEL_F7 LABEL_F8 LABEL_F9 
-               LABEL_F10 LABEL_F11 LABEL_F12 XAS_QUEUE/,
+               LABEL_F10 LABEL_F11 LABEL_F12 XAS_QUEUE START STOP EXIT 
+               RELOAD STAT RUNNING ALIVE DEAD STOPPED STARTED RELOADED 
+               STATED EXITED SHUTDOWN KILLME PROC_ROOT NOCMD/,
       any => q/AVAILABLE DELETE UNKNOWN QUEUED COMPLETED EXITING RUNNING 
                MOVING WAITING SUSPENDED SUBMIT SUBMITTED JOBSTATS RPC_JSON 
                RPC_DEFAULT_PORT RPC_DEFAULT_ADDRESS RPC_ERR_PARSE RPC_ERR_REQ 
                RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL RPC_ERR_SERVER 
                RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN RPC_ERR_APP LABEL_F1 LABEL_F2 
                LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6 LABEL_F7 LABEL_F8 LABEL_F9 
-               LABEL_F10 LABEL_F11 LABEL_F12 XAS_QUEUE/,
+               LABEL_F10 LABEL_F11 LABEL_F12 XAS_QUEUE START STOP EXIT 
+               RELOAD STAT RUNNING ALIVE DEAD STOPPED STARTED RELOADED STATED
+               EXITED SHUTDOWN KILLME PROC_ROOT NOCMD/,
       tags => {
           batch   => 'UNKNOWN QUEUED COMPLETED EXITING RUNNING MOVING WAITING SUSPENDED AVAILABLE DELETE SUBMIT SUBMITTED',
           workman => 'UNKNOWN COMPLETED RUNNING AVAILABLE SUBMIT SUBMITTED JOBSTAT',
@@ -84,6 +111,10 @@ use Badger::Class
           labels  => q/LABEL_F1 LABEL_F2 LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6
                       LABEL_F7 LABEL_F8 LABEL_F9 LABEL_F10 LABEL_F11 
                       LABEL_F12/,
+          supervisor => q/START STOP EXIT RELOAD STAT RUNNING ALIVE DEAD 
+                          STOPPED STARTED RELOADED STATED EXITED SHUTDOWN 
+                          KILLME PROC_ROOT NOCMD/,
+
       }
   }
 ;
@@ -120,7 +151,9 @@ L<Badger::Constants|Badger::Constants> and also provides those constants.
  RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL RPC_ERR_SERVER 
  RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN RPC_ERR_APP LABEL_F1 LABEL_F2 
  LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6 LABEL_F7 LABEL_F8 LABEL_F9 
- LABEL_F10 LABEL_F11 LABEL_F12
+ LABEL_F10 LABEL_F11 LABEL_F12 START STOP EXIT RELOAD STAT 
+ RUNNING ALIVE DEAD STOPPED STARTED RELOADED STATED EXITED 
+ SHUTDOWN KILLME PROC_ROOT
 
  Along with these tags
 
@@ -128,10 +161,15 @@ L<Badger::Constants|Badger::Constants> and also provides those constants.
  workman
  jsonrpc
  labels
+ supervisor
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

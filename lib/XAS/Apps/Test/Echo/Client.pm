@@ -36,7 +36,7 @@ sub do_echo {
     $message = $self->handle->get();
     $self->handle->disconnect();
 
-    $self->log->info(sprintf("echo = %s", $message));
+    $self->log('info', sprintf("echo = %s", $message));
 
 }
 
@@ -45,11 +45,11 @@ sub main {
 
     $self->setup();
 
-    $self->log->debug('Starting main section');
+    $self->log('debug', 'Starting main section');
 
     $self->do_echo();
 
-    $self->log->debug('Ending main section');
+    $self->log('debug', 'Ending main section');
 
 }
 
@@ -111,9 +111,13 @@ The text to be "echoed" back.
 
 =head1 SEE ALSO
 
- bin/echo-client.pl
+=over 4
 
-L<XAS|XAS>
+=item bin/echo-client.pl
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

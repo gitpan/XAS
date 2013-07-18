@@ -14,6 +14,12 @@ use XAS::Class
       unknownmsg => "%s: unknown protocol type: %s",
       noqueues   => "no Queues were defined",
       notypes    => "no Types were defined",
+  },
+  vars => {
+    PARAMS => {
+        -queues => 1,
+        -types  => 1
+    }
   }
 ;
 
@@ -27,21 +33,19 @@ sub handle_connected {
     my ($kernel, $self, $frame) = @_[KERNEL, OBJECT, ARG0];
 
     my $nframe;
-    my $alias = $self->config('Alias');
-    my $queues = $self->config('Queues');
+    my $alias = $self->alias;
+    my $queues = $self->queues;
 
     if (ref($queues) eq ARRAY) {
 
         for my $q (@$queues) {
 
             $nframe = $self->stomp->subscribe(
-                {
-                    destination => $q,
-                    ack         => 'client'
-                }
+                -destination => $q,
+                -ack         => 'client'
             );
 
-            $self->log($kernel, 'info', $self->message('subscribed', $alias, $q));
+            $self->log('info', $self->message('subscribed', $alias, $q));
             $kernel->yield('send_data', $nframe);
 
         }
@@ -49,13 +53,11 @@ sub handle_connected {
     } else {
 
         $nframe = $self->stomp->subscribe(
-            {
-                destination => $queues,
-                ack         => 'client'
-            }
+            -destination => $queues,
+            -ack         => 'client'
         );
 
-        $self->log($kernel, 'info', $self->message('subscribed', $alias, $queues));
+        $self->log('info', $self->message('subscribed', $alias, $queues));
         $kernel->yield('send_data', $nframe);
 
     }
@@ -68,16 +70,18 @@ sub handle_message {
     my $data;
     my $message;
     my $session;
-    my $alias = $self->config('Alias');
-    my $types = $self->config('Types');
-    my $message_id = $frame->headers->{'message-id'};
-    my $nframe = $self->stomp->ack({'message-id' => $message_id});
+    my $alias = $self->alias;
+    my $types = $self->types;
+    my $message_id = $frame->header->message_id;
+    my $nframe = $self->stomp->ack(
+        -message_id => $message_id
+    );
 
     try {
 
         $message = decode($frame->body);
 
-        $self->log($kernel, 'info', 
+        $self->log('info', 
             $self->message(
                 'received', 
                 $alias, 
@@ -117,34 +121,6 @@ sub handle_message {
 # ---------------------------------------------------------------------
 # Public Methods
 # ---------------------------------------------------------------------
-
-sub spawn {
-    my $class = shift;
-
-    my %args = @_;
-    my $self = $class->SUPER::spawn(@_);
-
-    unless (defined($args{'Types'})) {
-
-        $self->throw_msg(
-            'xas.collector.connector.spawn.notypes',
-            'notypes'
-        );
-
-    }
-
-    unless (defined($args{'Queues'})) {
-
-        $self->throw_msg(
-            'xas.collector.connector.spawn.noqueues',
-            'noqueues'
-        );
-
-    }
-
-    return $self;
-
-}
 
 # ---------------------------------------------------------------------
 # Private Methods
@@ -186,15 +162,15 @@ XAS::Collector::Connector - Perl extension for the XAS environment
       '/queue/alert',
   ];
 
-  XAS::Collector::Connector->spawn(
-      RemoteAddress => $host,
-      RemotePort    => $port,
-      Alias         => 'collector',
-      Logger        => 'logger',
-      Login         => 'collector',
-      Passcode      => 'ddc',
-      Queues        => $queues,
-      Types         => $types
+  XAS::Collector::Connector->new(
+      -host     => $host,
+      -port     => $port,
+      -alias    => 'collector',
+      -logger   => 'logger',
+      -login    => 'collector',
+      -passcode => 'ddc',
+      -queues   => $queues,
+      -types    => $types
   );
 
 =head1 DESCRIPTION
@@ -204,19 +180,19 @@ are received, they are then passed off to the appropriate message handler.
 
 =head1 METHODS
 
-=head2 spawn
+=head2 new
 
-The module uses the configuration items from POE::Component::Client::Stomp
+The module uses the configuration items from XAS::Lib::Stomp::Client
 along with this additional items.
 
 =over 4 
 
-=item B<Queues>
+=item B<-queues>
 
 The queues that the connector will subscribe too. This can be a string or
 an array of strings.
 
-=item B<Types>
+=item B<-types>
 
 This is a list of XAS packet types that this connector can handle. The list
 consists of hashes with the following values: XAS packet type, name of 
@@ -268,9 +244,11 @@ The received STOMP frame.
 
 =head1 SEE ALSO
 
- POE::Component::Client::Stomp
+=over 4
 
-L<XAS|XAS>
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 
@@ -278,7 +256,7 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Kevin L. Esteb
+Copyright (C) 2013 by Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,

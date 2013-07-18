@@ -31,7 +31,7 @@ sub main {
 
     $logger = XAS::Lib::Daemon::Logger->new(
         -alias  => 'logger',
-        -logger => $self->log
+        -logger => $self->logger
     );
 
     $collector = XAS::Collector::Factory->load(
@@ -40,24 +40,24 @@ sub main {
         -configs   => $configs
     );
 
-    $connection = XAS::Collector::Connector->spawn(
-        RemoteAddress   => $hostname,
-        RemotePort      => $port,
-        RetryReconnect  => TRUE,
-        EnableKeepAlive => TRUE,
-        Alias           => 'connector',
-        Logger          => 'logger',
-        Login           => 'guest',
-        Passcode        => 'guest',
-        Queues          => $collector->queues,
-        Types           => $collector->types,
+    $connection = XAS::Collector::Connector->new(
+        -host             => $hostname,
+        -port             => $port,
+        -retry_reconnect  => TRUE,
+        -enable_keepalive => TRUE,
+        -alias            => 'connector',
+        -logger           => 'logger',
+        -login            => 'guest',
+        -passcode         => 'guest',
+        -queues           => $collector->queues,
+        -types            => $collector->types,
     );
 
-    $self->log->info('Starting up');
+    $self->log('info', 'Starting up');
 
     $poe_kernel->run();
 
-    $self->log->info('Shutting down');
+    $self->log('info', 'Shutting down');
 
 }
 
@@ -138,9 +138,13 @@ This uses the standard .ini format. The entries mean the following:
 
 =head1 SEE ALSO
 
- sbin/xas-collector.pl
+=over 4
 
-L<XAS|XAS>
+=item sbin/xas-collector.pl
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

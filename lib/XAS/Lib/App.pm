@@ -13,15 +13,15 @@ use XAS::Class
   version   => $VERSION,
   base      => 'XAS::Base',
   import    => 'class CLASS',
-  accessors => 'log alert alerts pid xdebug',
+  accessors => 'alert alerts pid',
+  mixin     => 'XAS::Lib::Mixin::Handlers',
   vars => {
-      script => '',
-      PARAMS => {
-          -throws   => { optional => 1, default => 'changeme' },
-          -options  => { optional => 1, default => [] },
-          -facility => { optional => 1, default => 'systems' },
-          -priority => { optional => 1, default => 'high' },
-      }
+    PARAMS => {
+      -throws   => { optional => 1, default => 'changeme' },
+      -options  => { optional => 1, default => [] },
+      -facility => { optional => 1, default => 'systems' },
+      -priority => { optional => 1, default => 'high' },
+    }
   }
 ;
 
@@ -33,8 +33,6 @@ Params::Validate::validation_options(
     }
 );
 
-($script) = ( $0 =~ m#([^\\/]+)$# );
-
 # ----------------------------------------------------------------------
 # Public Methods
 # ----------------------------------------------------------------------
@@ -42,51 +40,12 @@ Params::Validate::validation_options(
 sub signal_handler {
     my $signal = shift;
 
-    __PACKAGE__->throw('process intrupted by signal ' . $signal);
+    my $ex = WPM::Exception->new(
+        type => 'xas.lib.app.signal_handler',
+        info => 'process interrupted by signal ' . $signal
+    );
 
-}
-
-sub exit_handler {
-    my ($self, $ex) = @_;
-
-    my $errors;
-    my $rc = 1;
-    my $ref = ref($ex);
-
-    if ($ref) {
-
-        if ($ex->isa('XAS::Exception')) {
-
-            my $type = $ex->type;
-            my $info = $ex->info;
-
-            $errors = $self->message('exception', $type, $info);
-
-        } else {
-
-            $errors = $self->message('unexpected', $ex);
-
-        }
-
-    } else {
-
-        $errors = $self->message('unknownerror', $ex);
-
-    }
-
-    $self->log->fatal($errors);
-
-    if ($self->alerts) {
-
-        $self->alert->send(
-            -priority => $self->priority,
-            -facility => $self->facility,
-            -message  => $errors
-        );
-
-    }
-
-    return $rc;
+    $ex->throw();
 
 }
 
@@ -101,7 +60,7 @@ sub define_signals {
 sub define_logging {
     my $self = shift;
 
-    $self->{log} = XAS::System->module(
+    $self->{logger} = XAS::System->module(
         logger => {
             -debug => $self->xdebug,
         }
@@ -177,6 +136,9 @@ sub _setup {
 sub _class_options {
     my $self = shift;
 
+    my $version = $self->CLASS->VERSION;
+    my $script  = $self->class->any_var('SCRIPT');
+
     $self->{alerts} = 1;
 
     return {
@@ -184,7 +146,7 @@ sub _class_options {
         'alerts!'  => \$self->{alerts},
         'help|h|?' => sub { pod2usage(-verbose => 0, -exitstatus => 0); },
         'manual'   => sub { pod2usage(-verbose => 2, -exitstatus => 0); },
-        'version'  => sub { printf("%s - v%s\n", $script, $self->CLASS->VERSION); exit 0; }
+        'version'  => sub { printf("%s - v%s\n", $script, $version); exit 0; }
     };
 
 }
@@ -365,20 +327,6 @@ The signal that was captured.
 
 =back
 
-=head2 exit_handler($ex)
-
-This method is the default exit handler for any procedure within the XAS 
-environment. It will write an entry to the log file and send an alert.
-
-=over 4
-
-=item B<$ex>
-
-This should be an execption object, usually a XAS::Exception. The 
-exeception is formated to a string and printed to log.
-
-=back
-
 =head1 ACCESSORS
 
 This module has several accessors that make life easier for you.
@@ -433,7 +381,11 @@ This prints out the version of the module.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

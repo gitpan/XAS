@@ -299,9 +299,13 @@ Example
 
 =head1 SEE ALSO
 
- Badger::Log
+=over 4
 
-L<XAS|XAS>
+=item Badger::Log
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

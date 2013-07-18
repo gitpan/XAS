@@ -1,10 +1,13 @@
 package XAS::Collector::Alert;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use POE;
 use Try::Tiny;
-use XAS::Model::Database 'Alert';
+use XAS::Model::Database
+  schema => 'XAS::Model::Database::Base',
+  table  => 'Alert'
+;
 
 use XAS::Class
   version => $VERSION,
@@ -148,7 +151,11 @@ The acknowledgement to send back to the message queue server.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

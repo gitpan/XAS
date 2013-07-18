@@ -18,27 +18,36 @@ following can be completed.
 
 =head2 Startup Scripts
 
-Thy are located in /opt/xas/init.d. They start the  various daemons that run 
-in the background. They need to either be linked or copied to the approbiate
-locations. On Debian this would be /etc/init.d. Running update-rc.d will 
-then activate them. The following scripts are provided:
+They are located in /etc/init.d. They start the various daemons that run 
+in the background. On Debian, running update-rc.d will then activate them.
+
+At this point you need to decide how you want the environment to run. You
+can use xas-supervisor.pl to start and run the rest of the daemons or you
+can run them individually. There are advantages with either way. I would
+suggest running under the supervisor. 
+
+The following scripts are provided:
 
 =over 4
 
-=item B<xas-alerts.debian>
+=item B<xas-alerts>
 
 This process scans the database looking for unhandled alerts. If any are found
 an email is sent off to the approbiate people.
 
-=item B<xas-collector.debian>
+=item B<xas-collector>
 
 This process monitors the queues on the message queue server. When messages 
 arrive they are processed and stored in the database.
 
-=item B<xas-spooler.debian>
+=item B<xas-spooler>
 
 This process monitors the spool directories. When a spool file appears 
 they are processed and sent to the message queue server.
+
+=item B<xas-supervisor>
+
+This is a process that starts and monitors other processes.
 
 =back
 
@@ -52,7 +61,11 @@ alerts that may be generated.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

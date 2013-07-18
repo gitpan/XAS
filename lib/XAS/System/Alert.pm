@@ -30,13 +30,11 @@ Params::Validate::validation_options(
 sub send {
     my $self = shift;
 
-    my %p = validate(@_, 
-        { 
-            -message  => 1,
-            -facility => { optional => 1, default => 'systems' },
-            -priority => { optional => 1, default => 'low', regex => qr/low|medium|high/ }, 
-        }
-    );
+    my %p = validate(@_, { 
+        -message  => 1,
+        -facility => { optional => 1, default => 'systems' },
+        -priority => { optional => 1, default => 'low', regex => qr/low|medium|high/ }, 
+    });
 
     my $dt = DateTime->now(time_zone => 'local');
 
@@ -130,7 +128,11 @@ The message text for the message
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

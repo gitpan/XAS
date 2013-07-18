@@ -49,15 +49,6 @@ use Data::Dumper;
 # Public Methods
 # ---------------------------------------------------------------------
 
-sub log {
-    my ($self, $level, $message) = @_;
-
-    my $logger = $self->logger;
-
-    $poe_kernel->post($logger, $level, $message);
-
-}
-
 sub initialize {
     my ($self, $kernel, $session) = @_;
 
@@ -295,7 +286,11 @@ This event will trigger the execution of the cleanup() method.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

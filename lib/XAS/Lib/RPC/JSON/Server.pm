@@ -1,23 +1,30 @@
 package XAS::Lib::RPC::JSON::Server;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use POE;
 use Try::Tiny;
+use Set::Light;
 
 use XAS::Class
   version   => $VERSION,
   base      => 'XAS::Lib::Net::Server',
   codec     => 'JSON',
   constants => 'HASH ARRAY :jsonrpc',
+  accessors => 'methods',
   messages => {
-      'rpc_method'  => "the rpc method \"%s\" is unknown",
-      'rpc_version' => "this server supports only json-rpc version 2.0",
-      'rpc_format'  => "this json-rpc format is not supported",
-      'rpc_batch'   => "the usage of json-rpc batch mode is not supported",
-      'rpc_notify'  => "the usage of json-rpc notifications is not supported",
-      'nologger'    => 'no Logger defined',
+    'rpc_method'  => "the rpc method \"%s\" is unknown",
+    'rpc_version' => "this server supports only json-rpc version 2.0",
+    'rpc_format'  => "this json-rpc format is not supported",
+    'rpc_batch'   => "the usage of json-rpc batch mode is not supported",
+    'rpc_notify'  => "the usage of json-rpc notifications is not supported",
+    'nologger'    => 'no logger defined',
   },
+  vars => {
+    PARAMS => {
+      -port => { optional => 1, default => '9505' },
+    }
+  }
 ;
 
 my $errors = {
@@ -36,69 +43,57 @@ use Data::Dumper;
 # Public Methods
 # ----------------------------------------------------------------------
 
-sub process {
-    my ($self, $message, $wheel) = @_;
+sub process_request {
+    my ($kernel, $self, $input, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
 
-    my $result;
-    my $packet;
-    my $output;
     my $request;
-    my @packets;
+    my $alias = $self->alias;
 
-    $request = decode($message);
+    $self->log('debug', "$alias: entering process_request");
+
+    $request = decode($input);
 
     if (ref($request) eq ARRAY) {
 
         foreach my $r (@$request) {
 
-            try {
-
-                $result = $self->_process_request($r);
-                $packet = $self->_rpc_result($r->{id}, $result);
-
-            } catch {
-
-                my $ex = $_;
-
-                $packet = $self->_exception_handler($ex, $r->{id});
-
-            };
-
-            push(@packets, $packet);
+            $self->_rpc_request($kernel, $r, $ctx);
 
         }
 
-        $output = encode(@packets);
-
     } else {
 
-        try {
-
-            $result = $self->_process_request($request);
-            $packet = $self->_rpc_result($request->{id}, $result);
-
-        } catch {
-
-            my $ex = $_;
-
-	        $packet = $self->_exception_handler($ex, $request->{id});
-
-        };
-
-        $output = encode($packet);
+        $self->_rpc_request($kernel, $request, $ctx);
 
     }
 
-    return $output;
+}
+
+sub process_response {
+    my ($kernel, $self, $output, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
+
+    my $json;
+    my $alias = $self->alias;
+
+    $self->log('debug', "$alias: entering process_response");
+
+    $json = $self->_rpc_result($ctx->{id}, $output);
+
+    $kernel->yield('client_output', encode($json), $ctx->{wheel});
 
 }
 
-sub log {
-    my ($self, $level, $message) = @_;
+sub process_errors {
+    my ($kernel, $self, $output, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
 
-    my $logger = $self->logger;
+    my $json;
+    my $alias = $self->alias;
 
-    $poe_kernel->post($logger, $level, $message);
+    $self->log('debug', "$alias: entering process_errors");
+
+    $json = $self->_rpc_error($ctx->{id}, $output->{code}, $output->{message});
+
+    $kernel->yield('client_output', encode($json), $ctx->{wheel});
 
 }
 
@@ -142,16 +137,23 @@ sub _exception_handler {
 
             }
 
+            $self->log('error', $self->message('exception', $type, $info));
+
         } else {
 
-            $packet = $self->_rpc_error($id, RPC_ERR_SERVER, "Server error");
+            my $msg = sprintf("%s", $ex);
+
+            $packet = $self->_rpc_error($id, RPC_ERR_SERVER, $msg);
+            $self->log('error', $self->message('unexpected', $msg));
 
         }
 
     } else {
 
         my $msg = sprintf("%s", $ex);
+
         $packet = $self->_rpc_error($id, RPC_ERR_APP, $msg);
+        $self->log('error', $self->message('unexpected', $msg));
 
     }
 
@@ -159,56 +161,68 @@ sub _exception_handler {
 
 }
 
-sub _process_request {
-    my ($self, $request) = @_;
+sub _rpc_request {
+    my ($self, $kernel, $request, $ctx) = @_;
 
     my $method;
-    my $output;
+    my $alias = $self->alias;
+    
+    $self->log('debug', "$alias: _rpc_request: " . Dumper($request));
 
-    if (ref($request) ne HASH) {
+    try {
 
-        $self->throw_msg(
-            'xas.lib.rpc.json.server.format', 
-            'rpc_format'
-        );
+        if (ref($request) ne HASH) {
 
-    }
+            $self->throw_msg(
+                'xas.lib.rpc.json.server.format', 
+                'rpc_format'
+            );
 
-    if ($request->{jsonrpc} ne RPC_JSON) {
+        }
 
-        $self->throw_msg(
-            'xas.lib.rpc.json.server.rpc_version', 
-            'rpc_version'
-        );
+        if ($request->{jsonrpc} ne RPC_JSON) {
 
-    }
+            $self->throw_msg(
+                'xas.lib.rpc.json.server.rpc_version', 
+                'rpc_version'
+            );
 
-    unless (defined($request->{id})) {
+        }
 
-        $self->throw_msg(
-            'xas.lib.rpc.json.server.nonotifications', 
-            'rpc_nonotify'
-        );
+        unless (defined($request->{id})) {
 
-    }
+            $self->throw_msg(
+                'xas.lib.rpc.json.server.nonotifications', 
+                'rpc_nonotify'
+            );
 
-    $method = 'do_' . $request->{method};
+        }
 
-    if ($self->can($method)) {
+        if ($self->methods->has($request->{method})) {
 
-        $output = $self->$method($request->{params});
+            $ctx->{id} = $request->{id};
+            $self->log('debug', "$alias: performing \"" . $request->{method} . '"');
 
-    } else {
+            $kernel->post($alias, $request->{method}, $request->{params}, $ctx);
 
-        $self->throw_msg(
-            'xas.lib.rpc.json.server.rpc_method', 
-            'rpc_method', 
-            $request->{method}
-        );
+        } else {
 
-    }
+            $self->throw_msg(
+                'xas.lib.rpc.json.server.rpc_method', 
+                'rpc_method', 
+                $request->{method}
+            );
 
-    return $output;
+        }
+
+    } catch {
+
+        my $ex = $_;
+
+        my $output = $self->_exception_handler($ex, $request->{id});
+        $kernel->yield('client_output', encode($output), $ctx->{wheel});
+
+    };
 
 }
 
@@ -248,7 +262,7 @@ __END__
 
 =head1 NAME
 
-XAS::Lib::RPC::JSON::Server - A JSON RPC interface for the XAS environment
+XAS::Lib::RPC::JSON::Server - A simple JSON RPC server
 
 =head1 SYNOPSIS
 
@@ -262,8 +276,8 @@ XAS::Lib::RPC::JSON::Server - A JSON RPC interface for the XAS environment
 =head1 DESCRIPTION
 
 This modules implements a simple JSON RPC v2.0 server. It needs to be extended
-to be usefull. This runs as a POE session. It doesn't support "Notification" 
-calls.
+to be useful. This runs as a POE session. It doesn't support "Notification" 
+calls. It inherits from L<XAS::Lib::Net::Server>.
 
 =head1 METHODS
 
@@ -292,46 +306,98 @@ The name of the logger session.
 
 =back
 
-=head2 process($packet, $wheel)
+=head2 methods
 
-This method will attempt to parse the JSON RPC packet and call the correct RPC
-method. While returning the correct response to the client. 
+A handle to a L<Set::Light> object that contains the methods 
+that can be evoked.
 
-The method called will be prefixed with "do_". So if the client wants to call 
-a "reverse" method, the server will call a "do_reverse" method and return the
-response.
+=head1 PUBLIC EVENTS
+
+Events are used to handle processing.
+
+=head2 process_request($kernel, $self, $input, $ctx)
+
+This method will attempt to parse the JSON RPC request packet and call the 
+correct RPC method. 
 
 =over 4
 
-=item B<$packet>
+=item B<$kernel>
 
-The packet received from the socket.
+The handle to the POE kernel.
 
-=item B<$wheel>
+=item B<$self>
 
-The current POE wheel.
+The handle to the current object.
+
+=item B<$input>
+
+The input to parse and create a json packet from.
+
+=item B<$ctx>
+
+The context of this call.
 
 =back
 
-=head2 log($level, $message)
+=head2 process_response($kernel, $self, $input, $ctx)
 
-This method will send log message to the logger session.
+This method will attempt to parse the response and return the correct JSON
+RPC results packet to the client. 
 
 =over 4
 
-=item B<$level>
+=item B<$kernel>
 
-The log level.
+The handle to the POE kernel.
 
-=item B<$message>
+=item B<$self>
 
-The message to log.
+The handle to the current object.
+
+=item B<$output>
+
+The out to parse and create a json response from.
+
+=item B<$ctx>
+
+The context of this call.
+
+=back
+
+=head2 process_errors($kernel, $self, $output, $ctx)
+
+This method will attempt to parse the response and return the correct JSON
+RPC error packet to the client. 
+
+=over 4
+
+=item B<$kernel>
+
+The handle to the POE kernel.
+
+=item B<$self>
+
+The handle to the current object.
+
+=item B<$output>
+
+The output to parse and create a json response from. This needs to have
+"code" and "message" fields.
+
+=item B<$ctx>
+
+The context of this call.
 
 =back
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

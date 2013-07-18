@@ -7,7 +7,7 @@ use Try::Tiny;
 
 use XAS::Class
   version => $VERSION,
-  base    => 'POE::Component::Client::Stomp XAS::Base',
+  base    => 'XAS::Lib::Stomp::POE::Client',
   utils   => 'trim',
   messages => {
       connected  => "%s: connected to %s on %s",
@@ -19,9 +19,12 @@ use XAS::Class
       unknownerr => "%s: %s",
       knownerr   => "%s: %s, %s",
       shutdown   => "%s: shutdown - disconnecting for the server",
-      nologger   => "no Logger was defined",
-      nologin    => "no Login was defined",
-      nopasscode => "no Passcode was defined",
+  },
+  vars => {
+    PARAMS => {
+        -login    => 1,
+        -passcode => 1,
+    }
   }
 ;
 
@@ -34,53 +37,51 @@ use Data::Dumper;
 sub handle_connection {
     my ($kernel, $self) = @_[KERNEL, OBJECT];
 
-    my $alias = $self->config('Alias');
+    my $alias = $self->alias;
 
-    $self->log($kernel, 'debug', "$alias: entering handle_connection()");
+    $self->log('debug', "$alias: entering handle_connection()");
 
     my $frame = $self->stomp->connect(
-        {
-            login    => $self->config('Login'),
-            passcode => $self->config('Passcode')
-        }
+        -login    => $self->login,
+        -passcode => $self->passcode
     );
 
-    $self->log($kernel, 'info', $self->message('connected', $alias, $self->host, $self->port));
+    $self->log('info', $self->message('connected', $alias, $self->host, $self->port));
 
     $kernel->yield('send_data', $frame);
     $kernel->yield('connection_up');
 
-    $self->log($kernel, 'debug', "$alias: leaving handle_connection()");
+    $self->log('debug', "$alias: leaving handle_connection()");
 
 }
 
 sub handle_receipt {
     my ($kernel, $self, $frame) = @_[KERNEL, OBJECT, ARG0];
 
-    my $alias = $self->config('Alias');
+    my $alias = $self->alias;
     my $message = $self->message('recvrpt', $alias, $frame->{headers}->{'message-id'});
 
-    $self->log($kernel, 'error', $message);
+    $self->log('error', $message);
 
 }
 
 sub handle_error {
     my ($kernel, $self, $frame) = @_[KERNEL, OBJECT, ARG0];
 
-    my $alias = $self->config('Alias');
+    my $alias = $self->alias;
     my $message = $self->message('recverr', $alias, trim($frame->body));
 
-    $self->log($kernel, 'error', $message);
+    $self->log('error', $message);
 
 }
 
 sub handle_message {
     my ($kernel, $self, $frame) = @_[KERNEL, OBJECT, ARG0];
 
-    my $alias = $self->config('Alias');
+    my $alias = $self->alias;
     my $message = $self->message('recvmsg', $alias, $frame->{headers}->{'message-id'});
 
-    $self->log($kernel, 'error', $message);
+    $self->log('error', $message);
 
 }
 
@@ -88,62 +89,16 @@ sub handle_message {
 # Public Methods
 # ---------------------------------------------------------------------
 
-sub spawn {
-    my $class = shift;
-
-    my %args = @_;
-    my $self = $class->SUPER::spawn(@_);
-
-    unless (defined($args{'Logger'})) {
-
-        $self->throw_msg(
-            'xas.lib.connector.spawn.nologger',
-            'nologger'
-        );
-
-    }
-
-    unless (defined($args{'Login'})) {
-
-        $self->throw_msg(
-            'xas.lib.connector.spawn.nologin',
-            'nologin'
-        );
-
-    }
-
-    unless (defined($args{'Passcode'})) {
-
-        $self->throw_msg(
-            'xas.lib.connector.spawn.nopasscode',
-            'nopasscode'
-        );
-
-    }
-
-    return $self;
-
-}
-
-sub log {
-    my ($self, $kernel, $level, @args) = @_;
-
-    my $logger = $self->config('Logger');
-
-    $kernel->post($logger, $level, @args);
-
-}
-
-sub handle_shutdown {
+sub cleanup {
     my ($self, $kernel, $session) = @_;
 
-    my $alias = $self->config('Alias');
+    my $alias = $self->alias;
     my $frame = $self->stomp->disconnect();
     my $message = $self->message('shutdown', $alias);
 
     $kernel->call($session, 'send_data', $frame);
 
-    $self->log($kernel, 'warn', $message);
+    $self->log('warn', $message);
 
 }
 
@@ -151,18 +106,18 @@ sub exception_handler {
     my ($self, $ex) = @_;
 
     my $ref = ref($ex);
-    my $alias = $self->config('Alias');
+    my $alias = $self->alias;
 
     if ($ref && $ex->isa('XAS::Exception')) {
 
         my $type = $ex->type;
         my $text = $ex->info;
 
-        $self->log($poe_kernel, 'error', $self->message('knownerr', $alias, $type, $text));
+        $self->log('error', $self->message('knownerr', $alias, $type, $text));
 
     } else {
 
-        $self->log($poe_kernel, 'error', $self->message('unknownerr', $alias, $ex));
+        $self->log('error', $self->message('unknownerr', $alias, $ex));
 
     }
 
@@ -184,10 +139,10 @@ XAS::Lib::Connector - Perl extension for the XAS environment
 
   use XAS::Lib::Connector;
 
-  my $connection = XAS::Lib::Connector->spawn(
-     Logger   => 'logger',
-     Login    => 'xas',
-     Passcode => 'xas'
+  my $connection = XAS::Lib::Connector->new(
+     -logger   => 'logger',
+     -login    => 'xas',
+     -passcode => 'xas'
   );
 
 =head1 DESCRIPTION
@@ -197,44 +152,24 @@ servers.
 
 =head1 PUBLIC METHODS
 
-=head2 spawn
+=head2 new
 
 This method creates the initial session, and checks for the following
 parameters:
 
 =over 
 
-=item B<Logger>
+=item B<-logger>
 
 The name of the logging session.
 
-=item B<Login>
+=item B<-login>
 
 The login name to be used on the message queue server.
 
-=item B<Passcode>
+=item B<-passcode>
 
 The passcode to be used on the message queue server.
-
-=back
-
-=head2 log($kernel, $level, $message)
-
-Provides a logging method for POE::Component::Client::Stomp. 
-
-=over
-
-=item B<$kernel>
-
-A pointer to the POE kernel.
-
-=item B<$level>
-
-A logging level that is compatiable to your logger.
-
-=item B<@args>
-
-The line that is to be written to the log.
 
 =back
 
@@ -269,9 +204,11 @@ The exception to handle.
 
 =head1 SEE ALSO
 
- POE::Component::Client::Stomp
+=over 4
 
-L<XAS|XAS>
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

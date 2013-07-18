@@ -1,7 +1,8 @@
 package XAS::Apps::Test::RPC::Methods;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
+use POE;
 use XAS::Class
   version => $VERSION,
   base    => 'XAS::Lib::RPC::JSON::Server',
@@ -11,8 +12,8 @@ use XAS::Class
 # Public Methods
 # ----------------------------------------------------------------------
 
-sub do_echo {
-    my ($self, $params) = @_;
+sub echo {
+    my ($kernel, $self, $params, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
 
     my $response = '';
 
@@ -22,27 +23,51 @@ sub do_echo {
 
     }
 
-    return $response;
+    $kernel->yield('process_response', $response, $ctx);
 
 }
 
-sub do_list {
-    my ($self, $params) = @_;
+sub list {
+    my ($kernel, $self, $params, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
 
-    return 'echo, list, status';
+    my $response = 'echo, list, status';
+
+    $kernel->yield('process_response', $response, $ctx);
 
 }
 
-sub do_status {
-    my ($self, $params) = @_;;
+sub status {
+    my ($kernel, $self, $params, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
 
-    return 'OK';
+    my $response = 'OK';
+
+    $kernel->yield('process_response', $response, $ctx);
 
 }
 
 # ----------------------------------------------------------------------
 # Private Methods
 # ----------------------------------------------------------------------
+
+sub initialize {
+    my ($self, $kernel, $session) = @_;
+
+    $kernel->state('echo', $self);
+    $kernel->state('list', $self);
+    $kernel->state('status', $self);
+
+}
+
+sub init {
+    my $class = shift;
+
+    my $self = $class->SUPER::init(@_);
+
+    $self->{methods} = Set::Light->new(qw/echo list status/);
+
+    return $self;
+
+}
 
 1;
 
@@ -89,9 +114,13 @@ This specifies three options that may be on the command line. They are
 
 =head1 SEE ALSO
 
- sbin/rpc-server.pl
+=over 4
 
-L<XAS|XAS>
+=item sbin/rpc-server.pl
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

@@ -41,7 +41,7 @@ use XAS::Apps::Templates::Generic;
 
 main: {
 
-    my $app = XAS::Apps::Templates::Generic->new();
+    my $app = XAS::Apps::Templates::Generic->new(-test => '');
 
     exit $app->run();
 

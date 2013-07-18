@@ -1,6 +1,6 @@
 package XAS::Lib::Net::Server;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use POE;
 use Socket;
@@ -11,15 +11,15 @@ use POE::Wheel::SocketFactory;
 
 use XAS::Class
   version   => $VERSION,
-  base      => 'XAS::Base',
+  base      => 'XAS::Lib::Session',
   utils     => 'weaken params',
   accessors => 'session',
+  constants => 'ARRAY',
   messages => {
       'connection_failed' => "%s: the client connection failed with %s, reason %s",
       'client_error'      => "%s: the client experienced error %s, reason %s",
       'client_connect'    => "%s: a connection from %s on port %s",
       'client_disconnect' => "%s: client disconnected from %s on port %s",
-      'alias'             => '%s: unable to set session alias',
       'recmsg'            => "%s: received message \"%s\" from %s on port %s",
       'reaper'            => "%s: reaper invoked for %s on port %s",
   },
@@ -28,8 +28,6 @@ use XAS::Class
           -port             => 1,
           -inactivity_timer => { optional => 1, default => 600 },
           -filter           => { optional => 1, default => undef },
-          -logger           => { optional => 1, default => 'logger' },
-          -alias            => { optional => 1, default => 'server' },
           -address          => { optional => 1, default => 'localhost' },
       }
   }
@@ -43,35 +41,28 @@ Params::Validate::validation_options(
     }
 );
 
-use Data::Dumper;
+#use Data::Dumper;
 
 # ----------------------------------------------------------------------
 # Public Methods
 # ----------------------------------------------------------------------
 
-sub initialize {
-    my ($self, $kernel) = @_;
-
-}
-
-sub reload {
+sub cleanup {
     my ($self, $kernel, $session) = @_;
-
-}
-
-sub shutdown {
-    my ($self, $kernel, $session) = @_;
-
-}
-
-sub process {
-    my ($self, $message, $wheel) = @_;
 
     my $alias = $self->alias;
-    
-    $self->log('info', $self->message('recmsg', $alias, $message, $self->host($wheel), $self->peerport($wheel)));
+    my $clients = $self->{clients};
 
-    return $message;
+    $self->log('debug', "$alias: cleanup()");
+
+    while (my $client = keys %$clients) {
+
+        $kernel->alarm_remove($client->{watchdog});
+        $client = undef;
+
+    }
+
+    delete $self->{listener};
 
 }
 
@@ -81,15 +72,6 @@ sub reaper {
     my $alias = $self->alias;
 
     $self->log('debug', $self->message('reaper', $alias, $self->host($wheel), $self->peerport($wheel)));
-
-}
-
-sub log {
-    my ($self, $level, $message) = @_;
-
-    my $logger = $self->logger;
-
-    $poe_kernel->post($logger, $level, $message);
 
 }
 
@@ -122,132 +104,32 @@ sub client {
 # Public Events
 # ----------------------------------------------------------------------
 
+sub process_request {
+    my ($kernel, $self, $input, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
+
+    my $output = $input;
+
+    $kernel->yield('process_response', $output, $ctx);
+
+}
+
+sub process_response {
+    my ($kernel, $self, $output, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
+
+    $kernel->yield('client_output', $output, $ctx->{wheel});
+
+}
+
+sub process_errors {
+    my ($kernel, $self, $output, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
+
+    $kernel->yield('client_output', $output, $ctx->{wheel});
+
+}
+
 # ----------------------------------------------------------------------
 # Private Events
 # ----------------------------------------------------------------------
-
-sub _session_start {
-    my ($kernel, $self) = @_[KERNEL,OBJECT];
-
-    my $alias = $self->alias;
-
-    $self->log('debug', "$alias: _session_start()");
-
-    # set the sessions alias
-
-    if ((my $rc = $kernel->alias_set($alias)) > 0) {
-
-        $self->throw_msg(
-            'xas.lib.net.server.alias',
-            'alias'
-        );
-
-    }
-
-    # set up signal handling
-
-    $kernel->sig(HUP  => 'session_interrupt');
-    $kernel->sig(INT  => 'session_interrupt');
-    $kernel->sig(TERM => 'session_interrupt');
-    $kernel->sig(QUIT => 'session_interrupt');
-
-    # perform other initialization
-
-    $self->initialize($kernel);
-
-    # start the server
-
-    $kernel->yield('server_start');
-
-}
-
-sub _session_stop {
-    my ($kernel, $self) = @_[KERNEL,OBJECT];
-
-    my $alias = $self->alias;
-
-    $self->log('debug', "$alias: _session_stop()");
-
-    if (defined($self->{listener})) {
-
-        delete $self->{listener};
-
-    }
-
-    $kernel->alias_remove($alias);
-
-}
-
-sub _session_reload {
-    my ($kernel, $self, $session) = @_[KERNEL,OBJECT,SESSION];
-
-    my $alias = $self->alias;
-
-    $self->log('debug', "$alias: _session_reload()");
-
-    $self->reload($kernel, $session);
-
-}
-
-sub _session_interrupt {
-    my ($kernel, $self, $session, $signal) = @_[KERNEL,OBJECT,SESSION,ARG0];
-
-    my $alias = $self->alias;
-
-    $self->log('debug', "$alias: _session_interrupt()");
-
-    if ($signal eq 'HUP') {
-
-        $self->reload($kernel, $session);
-
-    } else {
-
-        $self->shutdown($kernel, $session);
-
-    }
-
-}
-
-sub _session_shutdown {
-    my ($kernel, $self, $session) = @_[KERNEL,OBJECT,SESSION];
-
-    my $alias = $self->alias;
-    my $clients = $self->{clients};
-
-    $self->log('debug', "$alias: _session_shutdown()");
-
-    $self->shutdown($kernel, $session);
-
-    while (my $wheel = keys %$clients) {
-
-        $kernel->alarm_remove($self->{clients}->{$wheel}->{watchdog});
-        delete $self->{clients}->{$wheel};
-
-    }
-
-}
-
-sub _server_start {
-    my ($kernel, $self, $session) = @_[KERNEL,OBJECT,SESSION];
-
-    my $alias = $self->alias;
-
-    $self->log('debug', "$alias: _server_start()");
-
-    # start listening for connections
-
-    $self->{listener} = POE::Wheel::SocketFactory->new(
-        BindAddress    => $self->address,
-        BindPort       => $self->port,
-        SocketType     => SOCK_STREAM,
-        SocketDomain   => AF_INET,
-        SocketProtocol => 'tcp',
-        Reuse          => 1,
-        SuccessEvent   => 'client_connected',
-        FailureEvent   => 'client_connection_failed'
-    );
-
-}
 
 sub _client_connected {
     my ($kernel, $self, $socket, $peeraddr, $peerport, $wheel_id) = 
@@ -261,7 +143,7 @@ sub _client_connected {
     my $client = POE::Wheel::ReadWrite->new(
         Handle     => $socket,
         Filter     => $self->filter,
-        InputEvent => 'client_message',
+        InputEvent => 'client_input',
         ErrorEvent => 'client_error'
     );
 
@@ -290,16 +172,28 @@ sub _client_connection_failed {
 
 }
 
-sub _client_message {
+sub _client_input {
     my ($kernel, $self, $input, $wheel) = @_[KERNEL,OBJECT,ARG0,ARG1];
 
     my $alias = $self->alias;
+    my $ctx = {
+        wheel => $wheel
+    };
 
-    $self->log('debug', "$alias: _client_message()");
+    $self->log('debug', "$alias: _client_input()");
 
     $self->{clients}->{$wheel}->{active} = time();
 
-    my $output = $self->process($input, $wheel);
+    $kernel->yield('process_request', $input, $ctx);
+
+}
+
+sub _client_output {
+    my ($kernel, $self, $output, $wheel) = @_[KERNEL,OBJECT,ARG0,ARG1];
+
+    my $alias = $self->alias;
+
+    $self->log('debug', "$alias: _client_output()");
 
     $self->{clients}->{$wheel}->{client}->put($output);
 
@@ -340,6 +234,51 @@ sub _client_reaper {
 
 }
 
+sub _session_init {
+    my ($kernel, $self, $session) = @_[KERNEL,OBJECT,SESSION];
+
+    my $alias = $self->alias;
+
+    $self->log('debug', "$alias: _session_init()");
+
+    # public events
+
+    $kernel->state('process_errors',   $self);
+    $kernel->state('process_request',  $self);
+    $kernel->state('process_response', $self);
+
+    # private events
+
+    $kernel->state('client_error',             $self, '_client_error');
+    $kernel->state('client_input',             $self, '_client_input');
+    $kernel->state('client_reaper',            $self, '_client_reaper');
+    $kernel->state('client_output',            $self, '_client_output');
+    $kernel->state('client_connected',         $self, '_client_connected');
+    $kernel->state('client_connection_failed', $self, '_client_connection_failed');
+
+    # call out for other stuff
+
+    $self->initialize($kernel, $session);
+
+    # start listening for connections
+
+    $self->{listener} = POE::Wheel::SocketFactory->new(
+        BindAddress    => $self->address,
+        BindPort       => $self->port,
+        SocketType     => SOCK_STREAM,
+        SocketDomain   => AF_INET,
+        SocketProtocol => 'tcp',
+        Reuse          => 1,
+        SuccessEvent   => 'client_connected',
+        FailureEvent   => 'client_connection_failed'
+    );
+
+    # start everything up
+
+    $kernel->yield('startup');
+
+}
+
 # ----------------------------------------------------------------------
 # Private Methods
 # ----------------------------------------------------------------------
@@ -357,26 +296,6 @@ sub init {
         );
 
     }
-
-    $self->{session} = POE::Session->create(
-        object_states => [
-            $self => {
-                _start                   => '_session_start',
-                _stop                    => '_session_stop',
-                shutdown                 => '_session_shutdown',
-                session_interrupt        => '_session_interrupt',
-                session_reload           => '_session_reload',
-                server_start             => '_server_start',
-                client_error             => '_client_error',
-                client_reaper            => '_client_reaper',
-                client_message           => '_client_message',
-                client_connected         => '_client_connected',
-                client_connection_failed => '_client_connection_failed'
-            }
-        ]
-    );
-
-    weaken($self->{session});
 
     return $self;
 
@@ -404,7 +323,7 @@ XAS::Lib::Net::Server - A basic network server for the XAS Environment
 
 This module implements a simple text orientated nework protocol. All "packets" 
 will have an explict "\012\015" appended. These packets may be formated strings, 
-such as JSON. The server runs as a POE session.
+such as JSON. This module inherits from L<XAS::Lib::Session>.
 
 =head1 METHODS
 
@@ -439,52 +358,6 @@ An optional filter to use, defaults to POE::Filter::Line
 
 =back
 
-=head2 initialize($kernel)
-
-This method is for specific initialization of the module. By default it does
-nothing.
-
-=over 4
-
-=item B<$kernel>
-
-A handle for the POE kernel
-
-=back
-
-=head2 reload($kernel, $session)
-
-This method runs when a HUP signal is recieved. By default if does nothing.
-
-=over 4
-
-=item B<$kernel>
-
-A handle for the POE kernel.
-
-=item B<$session>
-
-A handle to the current POE session.
-
-=back
-
-=head2 shutdown($kernel, $session)
-
-This method starts the "shutdown" process for the POE session. A "shutdown" 
-can be initiated by an INT, TERM or QUIT signal. By default it does nothing. 
-
-=over 4
-
-=item B<$kernel>
-
-A handle to the POE kernel.
-
-=item B<$session>
-
-A handle to the current POE session.
-
-=back
-
 =head2 reaper($wheel)
 
 Called when the inactivity timer is triggered. 
@@ -497,37 +370,19 @@ The POE wheel that triggered the timer.
 
 =back
 
-=head2 process($packet, $wheel)
+=head2 declare_events($kernel, $session)
 
-This method does the processing for any packets that are sent over the socket.
-By default, it just returns the packet.
-
-=over 4
-
-=item B<$packet>
-
-The packet that was sent over the socket.
-
-=item B<$wheel>
-
-The POE wheel that handled the packet.
-
-=back
-
-=head2 log($level, $message)
-
-This will write log messages. The default this is just a dump to stderr.
+Declare methods to be acted upon.
 
 =over 4
 
-=item B<$level>
+=item B<$kernel>
 
-The log level, this is usually INFO, WARN, ERROR, FATAL or DEBUG. These
-are the levels that are understood by the XAS logger.
+A handle to the POE kernel.
 
-=item B<$message>
+=item B<$session>
 
-The message to log.
+A handle to the current POE session.
 
 =back
 
@@ -569,11 +424,95 @@ The POE wheel to use.
 
 =back
 
+=head1 PUBLIC EVENTS
+
+=head2 process_request($kernel, $self, $input, $ctx)
+
+This event will process the input from the client. It takes the
+following parameters:
+
+=over 4
+
+=item B<$kernel>
+
+A handle to the POE kernel.
+
+=item B<$self>
+
+A handle to the current object.
+
+=item B<$input>
+
+The input recieved from the socket.
+
+=item B<$ctx>
+
+A hash variable to maintain context. This will be initialized with a "wheel"
+field. Others fields may be added as needed.
+
+=back
+
+=head2 process_response($kernel, $self, $output, $ctx)
+
+This event will process the output from the client. It takes the
+following parameters:
+
+=over 4
+
+=item B<$kernel>
+
+A handle to the POE kernel.
+
+=item B<$self>
+
+A handle to the current object.
+
+=item B<$output>
+
+The output to be sent to the socket.
+
+=item B<$ctx>
+
+A hash variable to maintain context. This uses the "wheel" field to direct output
+to the correct socket. Others fields may have been added as needed.
+
+=back
+
+=head2 process_errors($kernel, $self, $output, $ctx)
+
+This event will process the error output from the client. It takes the
+following parameters:
+
+=over 4
+
+=item B<$kernel>
+
+A handle to the POE kernel.
+
+=item B<$self>
+
+A handle to the current object.
+
+=item B<$output>
+
+The output to be sent to the socket.
+
+=item B<$ctx>
+
+A hash variable to maintain context. This uses the "wheel" field to direct output
+to the correct socket. Others fields may have been added as needed.
+
+=back
+
 =head1 SEE ALSO
 
- POE::Filter::Line
+=over 4
 
-L<XAS|XAS>
+=item POE::Filter::Line
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

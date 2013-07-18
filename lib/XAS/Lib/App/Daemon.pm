@@ -8,28 +8,28 @@ use Pod::Usage;
 use Hash::Merge;
 use XAS::System;
 use Getopt::Long;
+use POSIX 'setsid';
 use Params::Validate ':all';
 
 use XAS::Class
   version   => $VERSION,
   import    => 'class CLASS',
   base      => 'XAS::Lib::App',
-  utils     => 'daemonize',
+  utils     => ':process',
   constants => 'TRUE FALSE',
   accessors => 'logfile pidfile daemon',
   messages => {
-      'runerr' => '%s is already running: %d',
-      'piderr' => '%s has left a pid file behind, exiting',
-      'wrterr' => 'unable to create pid file %s',
+    'runerr' => '%s is already running: %d',
+    'piderr' => '%s has left a pid file behind, exiting',
+    'wrterr' => 'unable to create pid file %s',
   },
   vars => {
-      script => '',
-      PARAMS => {
-          -throws   => { optional => 1, default => 'changeme' },
-          -options  => { optional => 1, default => [] },
-          -facility => { optional => 1, default => 'systems' },
-          -priority => { optional => 1, default => 'high' },
-      }
+    PARAMS => {
+      -throws   => { optional => 1, default => 'changeme' },
+      -options  => { optional => 1, default => [] },
+      -facility => { optional => 1, default => 'systems' },
+      -priority => { optional => 1, default => 'high' },
+    }
   }
 ;
 
@@ -40,8 +40,6 @@ Params::Validate::validation_options(
         XAS::Base::validation_exception($params, $class);
     }
 );
-
-($script) = ( $0 =~ m#([^\\/]+)$# );
 
 # ----------------------------------------------------------------------
 # Public Methods
@@ -60,7 +58,7 @@ sub define_signals {
 sub define_logging {
     my $self = shift;
 
-    $self->{log} = XAS::System->module(
+    $self->{logger} = XAS::System->module(
         logger => {
             -filename => $self->logfile,
             -debug    => $self->xdebug,
@@ -72,10 +70,12 @@ sub define_logging {
 sub define_pidfile {
     my $self = shift;
 
+    my $script  = $self->class->any_var('SCRIPT');
+
     # create a pid file, use it as a semaphore lock file
 
-    $self->log->debug("entering define_pidfile()");
-    $self->log->debug("pid file = " . $self->pidfile);
+    $self->log('debug', "entering define_pidfile()");
+    $self->log('debug', "pid file = " . $self->pidfile);
 
     try {
 
@@ -119,7 +119,7 @@ sub define_pidfile {
 
     };
 
-    $self->log->debug("leaving define_pidfile()");
+    $self->log('debug', "leaving define_pidfile()");
 
 }
 
@@ -129,7 +129,7 @@ sub define_daemon {
     # become a daemon...
     # interesting, "daemonize() if ($self->daemon);" doesn't work as expected
 
-    $self->log->debug("pid = " . $$);
+    $self->log('debug', "before pid = " . $$);
 
     if ($self->daemon) {
 
@@ -137,7 +137,7 @@ sub define_daemon {
 
     }
 
-    $self->log->debug("pid = " . $$);
+    $self->log('debug', "after pid = " . $$);
 
 }
 
@@ -158,7 +158,10 @@ sub run {
 
 sub _class_options {
     my $self = shift;
-    
+
+    my $version = $self->CLASS->VERSION;
+    my $script  = $self->class->any_var('SCRIPT');
+
     $self->{pidfile}  = $self->env->pidfile;
     $self->{logfile}  = $self->env->logfile;
     $self->{daemon}   = FALSE;
@@ -172,7 +175,7 @@ sub _class_options {
         'alerts!'   => \$self->{alerts},
         'help|h|?'  => sub { pod2usage(-verbose => 0, -exitstatus => 0); },
         'manual'    => sub { pod2usage(-verbose => 2, -exitstatus => 0); },
-        'version'   => sub { printf("%s - v%s\n", $script, $self->CLASS->VERSION); exit 0; }
+        'version'   => sub { printf("%s - v%s\n", $script, $version); exit 0; }
     };
 
 }
@@ -250,7 +253,11 @@ Become a daemon.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

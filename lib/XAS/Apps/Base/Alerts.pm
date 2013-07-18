@@ -40,23 +40,23 @@ sub main {
 
     $logger = XAS::Lib::Daemon::Logger->new(
         -alias  => 'logger',
-        -logger => $self->log
+        -logger => $self->logger
     );
 
     $alert = XAS::Monitor::Database::Alert->new(
-        -alias     => 'alert',
-        -logger    => 'logger',
-        -mailer    => $self->email,
+        -alias      => 'alert',
+        -logger     => 'logger',
+        -mailer     => $self->email,
         -email_to   => "kevin\@kesteb.us",
         -email_from => "xas\@" . $self->env->host . '.' . $self->env->domain,
-        -schedule => '*/15 * * * *',
+        -schedule   => '*/15 * * * *',
     );
 
-    $self->log->info("Starting up");
+    $self->log('info', "Starting up");
 
     $poe_kernel->run();
 
-    $self->log->info('Shutting down');
+    $self->log('info', 'Shutting down');
 
 }
 
@@ -88,9 +88,13 @@ XAS::Lib::App::Daemon::POE.
 
 =head1 SEE ALSO
 
- sbin/xas-alerts.pl
+=over 4
 
-L<XAS|XAS>
+=item sbin/xas-alerts.pl
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

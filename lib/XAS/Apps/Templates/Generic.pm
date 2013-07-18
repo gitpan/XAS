@@ -20,11 +20,11 @@ sub main {
 
     $self->setup();
 
-    $self->log->info('Starting up');
+    $self->log('info', 'Starting up');
 
     sleep(10);
 
-    $self->log->info('Shutting down');
+    $self->log('info', 'Shutting down');
 
 }
 
@@ -59,9 +59,13 @@ Place your configuration informaion here.
 
 =head1 SEE ALSO
 
- bin/template.pl
+=over 4
 
- XAS
+=item bin/template.pl
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

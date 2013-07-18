@@ -378,11 +378,17 @@ The name of the queue for the worker request.
 
 =head1 SEE ALSO
 
- Gearman::XS
- Gearman::XS::Client
- Gearman::XS::Worker
+=over 4
 
-L<XAS|XAS>
+=item Gearman::XS
+
+=item Gearman::XS::Client
+
+=item Gearman::XS::Worker
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

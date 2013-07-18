@@ -4,6 +4,7 @@ use 5.8.8;
 
 our $VERSION = '0.01';
 our $EXCEPTION = 'XAS::Exception';
+our ($SCRIPT)  = ( $0 =~ m#([^\\/]+)$# );
 
 use XAS::System;
 use XAS::Exception;
@@ -14,32 +15,36 @@ use XAS::Class
   version  => $VERSION,
   accessors => 'env',
   messages => {
-      exception     => "%s: %s",
-      dberror       => "a database error has occurred: %s",
-      invparams     => "invalid parameters passed, reason: %s",
-      nospooldir    => "no spool directory defined",
-      noschema      => "no database schema was defined",
-      unknownos     => "unknown OS: %s",
-      unexpected    => "unexpected error: %s",
-      unknownerror  => "unknown error: %s",
-      nodbaccess    => "unable to access database: %s; reason %s",
-      undeliverable => "unable to send mail to %s; reason: %s",
-      noserver      => "unable to connect to %s; reason: %s",
-      nodelivery    => "unable to send message to %s; reason: %s",
-      sequence      => "unable to retrieve sequence number from %s",
-      write_packet  => "unable to write a packet to %s",
-      read_packet   => "unable to read a packet from %s",
-      lock_error    => "unable to acquire a lock on %s",
-      invperms      => "unable to change file permissions on %s",
-      badini        => "unable to load config file: %s",
-      expiredacct   => 'this accounts expiration day has passed',
-      expiredpass   => 'this accounts password has expired',
-      sessionend    => 'the session has expired',
-      noaccess      => 'you are not able to access the system at this time',
-      loginattempts => 'you have exceeded your login attempts',
+    exception     => "%s: %s",
+    dberror       => "a database error has occurred: %s",
+    invparams     => "invalid parameters passed, reason: %s",
+    nospooldir    => "no spool directory defined",
+    noschema      => "no database schema was defined",
+    unknownos     => "unknown OS: %s",
+    unexpected    => "unexpected error: %s",
+    unknownerror  => "unknown error: %s",
+    nodbaccess    => "unable to access database: %s; reason %s",
+    undeliverable => "unable to send mail to %s; reason: %s",
+    noserver      => "unable to connect to %s; reason: %s",
+    nodelivery    => "unable to send message to %s; reason: %s",
+    sequence      => "unable to retrieve sequence number from %s",
+    write_packet  => "unable to write a packet to %s",
+    read_packet   => "unable to read a packet from %s",
+    lock_error    => "unable to acquire a lock on %s",
+    invperms      => "unable to change file permissions on %s",
+    badini        => "unable to load config file: %s",
+    expiredacct   => 'this accounts expiration day has passed',
+    expiredpass   => 'this accounts password has expired',
+    sessionend    => 'the session has expired',
+    noaccess      => 'you are not able to access the system at this time',
+    loginattempts => 'you have exceeded your login attempts',
   },
   vars => {
-      PARAMS => {}
+    PARAMS => {
+      -alerts => { optional => 1, default => 0 },
+      -xdebug => { optional => 1, default => 0 },
+      -logger => { optional => 1, default => undef },
+    }
   }
 ;
 
@@ -66,26 +71,38 @@ sub validation_exception {
     my $param = shift;
     my $class = shift;
 
-    my $x = index($param, $class);
-    my $y = index($param, ' ', $x);
-    my $method;
+    $param = lcfirst($param);
+    $class =~ s/::/./g;
+    $class = lc($class) . '.invparams';
 
-    if ($y > 0) {
+    __PACKAGE__->throw_msg($class, 'invparams', $param);
 
-        my $l = $y - $x;
-        $method = substr($param, $x, $l);
+}
+
+sub log {
+    my $self = shift;
+    my ($level, $message) = validate_pos(@_,
+        { regex => qr/info|warn|error|fatal|debug/i },
+        1
+    );
+
+    if ($self->logger) {
+
+        $self->logger->info($message)  if (lc($level) eq 'info');
+        $self->logger->warn($message)  if (lc($level) eq 'warn');
+        $self->logger->error($message) if (lc($level) eq 'error');
+        $self->logger->fatal($message) if (lc($level) eq 'fatal');
+        $self->logger->debug($message) if (lc($level) eq 'debug');
 
     } else {
 
-        $method = substr($param, $x);
+        unless ((lc($level) eq 'debug') && (! $self->xdebug)) {
+
+            warn sprintf("%-5s - %s\n", uc($level), $message);
+
+        }
 
     }
-
-    chomp($method);
-    $method =~ s/::/./g;
-    $method = lc($method) . '.invparams';
-
-    $class->throw_msg($method, 'invparams', $param);
 
 }
 
@@ -110,6 +127,7 @@ sub init {
         $key =~ s/^-//;
 
         next if ($key eq 'env');
+        next if ($key eq 'log');
 
         $self->{$key} = $value;
 
@@ -194,9 +212,31 @@ The class that it happened in.
 
 A handle to L<XAS::System::Environment|XAS::System::Environment>.
 
+=head2 log($level, $message)
+
+A basic logger.
+
+=over 4
+
+=item B<$level>
+
+The level for the message. This can be 'info', 'warn', 'error', 'fatal' and
+'debug'.
+
+=item B<$message>
+
+The message to write to the log.
+
+=back
+
+
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

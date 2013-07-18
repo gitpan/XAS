@@ -1,9 +1,9 @@
-XAS v0.03
+XAS v0.05
 
-XAS is a basic application framework to build distributed applications. It
-incorporates standardized methods and modules for program construction.
-This system is based on production code that has been running for over
-five years without any problems.
+XAS is middleware for Perl. It provides standardized methods, modules
+and philosophy for constructing large distributed applications. This 
+system is based on production code that has been running for over five 
+years without any problems.
 
 INSTALLATION
 
@@ -13,9 +13,30 @@ To install this module, run the following commands:
 	# ./Build
 	# ./Build test
 	# ./Build install
+    # ./Build post_install
 
-On a Linux system this will install the software in /opt/xas. This can
+On a Linux system this will install the software into /opt/xas. This can
 be overridden with the --install_base option to Build.PL. 
+
+You can also use the debian package manager to install this software. Use the
+following commands to do so:
+
+    # debuild -uc -us
+    # dpkg -i ../libxas-base-perl_0.05-1_all.deb
+
+This will install the software into /opt/xas. This package uses CPAN
+modules that may not be supported from the debian repositories. 
+
+WARNING
+
+    These installation instructions presupposes some sort of Linux box.
+    Persumably a Debian based distribution. The perl based installation
+    steps will work on Redhat based distributions. They will also work,
+    to a certain extent, on generic Unix based systems. With these, the 
+    specialized startup scripts will need to be modified to work on them.
+    This software requires Perl 5.8.8 or higher to operate.
+
+POST INSTALLATION
 
 This installation also creates a "xas" user and group. This is used to
 set permissions on files and for user context with running daemons.
@@ -23,10 +44,12 @@ set permissions on files and for user context with running daemons.
 A xas.sh file is created and placed in the /etc/profile.d directory to define 
 environment variables for the system. 
 
-Start up scripts for various daemons are created in /opt/xas/init.d. Since the 
+A xas file is created and placed in the /etc/logrotate.d directory to
+help manage log files.
+
+Start up scripts for various daemons are created in /etc/init.d. Since the 
 LSB is rather liberally interrupted by the various distributors, these scripts 
-are for Debian based systems. They can be copied or linked to the appropriate 
-places as desired. Porting them to other distributions is rather
+are for Debian based systems. Porting them to other distributions is rather
 trivial and if you have a fool proof way to determine the Linux distribution,
 please forward it to me. Thanks.
 
@@ -48,7 +71,7 @@ perldoc command.
 
 The latest and greatest is always available at:
 
-    http://svn.kesteb.us/repos/XAS-Base
+    http://svn.kesteb.us/repos/XAS-Base/trunk
 
 LICENSE AND COPYRIGHT
 

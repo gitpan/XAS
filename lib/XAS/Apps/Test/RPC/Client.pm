@@ -36,7 +36,7 @@ sub do_echo {
         }
     );
 
-    $self->log->info(sprintf("echo = %s", $response));
+    $self->log('info', sprintf("echo = %s", $response));
 
 }
 
@@ -49,7 +49,7 @@ sub do_status {
         -params => {}
     );
 
-    $self->log->info(sprintf("status = %s", $response));
+    $self->log('info', sprintf("status = %s", $response));
 
 }
 
@@ -62,7 +62,7 @@ sub do_list {
         -params => {}
     );
 
-    $self->log->info(sprintf("methods = %s", $response));
+    $self->log('info', sprintf("methods = %s", $response));
 
 }
 
@@ -71,13 +71,13 @@ sub main {
 
     $self->setup();
 
-    $self->log->debug('Starting main section');
+    $self->log('debug', 'Starting main section');
 
     $self->do_echo()   if ($self->echo);
     $self->do_list()   if ($self->list);
     $self->do_status() if ($self->status);
 
-    $self->log->debug('Ending main section');
+    $self->log('debug', 'Ending main section');
 
 }
 
@@ -149,9 +149,13 @@ This will list the status of the rpc server.
 
 =head1 SEE ALSO
 
- bin/rpc-client.pl
+=over 4
 
-L<XAS|XAS>
+=item bin/rpc-client.pl
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

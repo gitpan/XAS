@@ -41,11 +41,11 @@ sub parse_file {
 sub main {
     my $self = shift;
 
-    $self->log->debug('Starting main section');
+    $self->log('debug', 'Starting main section');
 
     $self->parse_file();
 
-    $self->log->debug('Ending main section');
+    $self->log('debug', 'Ending main section');
 
 }
 
@@ -97,9 +97,13 @@ Defines the dump file to use.
 
 =head1 SEE ALSO
 
- bin/pg_remove_data.pl
+=over 4
 
-L<XAS|XAS>
+=item bin/pg_remove_data.pl
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

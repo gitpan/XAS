@@ -15,7 +15,8 @@ use XAS::Class
   },
   vars => {
       PARAMS => {
-          -alias => { optional => 1, default => 'session' },
+          -logger => { optional => 1, default => 'logger' },
+          -alias  => { optional => 1, default => 'session' },
       }
   }
 ;
@@ -46,15 +47,13 @@ sub cleanup {
 
 }
 
-sub initialize {
-    my ($self, $kernel, $session) = @_;
+sub interrupt {
+    my ($self, $kernel, $session, $signal) = @_;
 
 }
 
-sub log {
-    my ($self, $level, $message) = @_;
-
-    warn sprintf("%-5s - %s\n", uc($level), $message);
+sub initialize {
+    my ($self, $kernel, $session) = @_;
 
 }
 
@@ -67,6 +66,19 @@ sub reload {
 
 sub stop {
     my ($self, $kernel, $session) = @_;
+
+}
+
+sub log {
+    my $self = shift;
+    my ($level, $message) = validate_pos(@_,
+        { regex => qr/info|warn|error|fatal|debug/i },
+        1
+    );
+
+    my $logger = $self->logger;
+
+    $poe_kernel->post($logger, $level, $message);
 
 }
 
@@ -128,6 +140,7 @@ sub _session_start {
     $kernel->sig(INT  => 'session_interrupt');
     $kernel->sig(TERM => 'session_interrupt');
     $kernel->sig(QUIT => 'session_interrupt');
+    $kernel->sig(ABRT => 'session_interrupt');
 
     $kernel->yield('session_init');
 
@@ -185,11 +198,11 @@ sub _session_interrupt {
 
     if ($signal eq 'HUP') {
 
-        $self->reload($kernel, $session);
+        $kernel->yield('session_reload');
 
     } else {
 
-        $self->cleanup($kernel, $session);
+        $self->interrupt($kernel, $session, $signal);
 
     }
 
@@ -206,7 +219,8 @@ XAS::Lib::Session - The base class for all POE Sessions.
 =head1 SYNOPSIS
 
  my $session = XAS::Lib::Session->new(
-     -alias => 'name',
+     -alias  => 'name',
+     -logger => 'logger'
  );
 
 =head1 DESCRIPTION
@@ -359,7 +373,11 @@ They should only be used with caution.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

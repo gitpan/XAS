@@ -1,14 +1,13 @@
 package XAS::Lib::Daemon::Logger;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use POE;
 use Params::Validate;
 
 use XAS::Class
-  version   => $VERSION,
-  base      => 'XAS::Lib::Session',
-  accessors => 'log',
+  version => $VERSION,
+  base    => 'XAS::Lib::Session',
   vars => {
       PARAMS => {
           -logger => 1,
@@ -31,35 +30,35 @@ Params::Validate::validation_options(
 sub debug {
     my ($kernel, $self, $buffer) = @_[KERNEL,OBJECT,ARG0];
 
-    $self->log->debug($buffer);
+    $self->logger->debug($buffer);
 
 };
 
 sub info {
     my ($kernel, $self, $buffer) = @_[KERNEL,OBJECT,ARG0];
 
-    $self->log->info($buffer);
+    $self->logger->info($buffer);
 
 }
 
 sub warn {
     my ($kernel, $self, $buffer) = @_[KERNEL,OBJECT,ARG0];
 
-    $self->log->warn($buffer);
+    $self->logger->warn($buffer);
 
 }
 
 sub error {
     my ($kernel, $self, $buffer) = @_[KERNEL,OBJECT,ARG0];
 
-    $self->log->error($buffer);
+    $self->logger->error($buffer);
 
 }
 
 sub fatal {
     my ($kernel, $self, $buffer) = @_[KERNEL,OBJECT,ARG0];
 
-    $self->log->fatal($buffer);
+    $self->logger->fatal($buffer);
 
 }
 
@@ -70,12 +69,9 @@ sub fatal {
 sub initialize {
     my ($self, $kernel, $session) = @_;
 
-    my $log = $self->logger;
     my $alias = $self->alias;
 
-    $self->{log} = $log;
-
-    $self->log->debug("$alias: entering initialize()");
+    $self->logger->debug("$alias: entering initialize()");
 
     $kernel->state('info',  $self);
     $kernel->state('warn',  $self);
@@ -83,7 +79,7 @@ sub initialize {
     $kernel->state('fatal', $self);
     $kernel->state('debug', $self);
 
-    $self->log->debug("$alias: leaving initialize()");
+    $self->logger->debug("$alias: leaving initialize()");
 
 }
 
@@ -104,16 +100,16 @@ XAS::Lib::Daemon::Logger - A Perl extension for the XAS environment
  use XAS::System;
  use XAS::Lib::Daemon::Logger
 
- my $log = XAS::System->module(
+ my $logger = XAS::System->module(
      logger => {
-         -debug => $debug,
+         -debug   => $debug,
          -logfile => $logfile
     }
  );
 
  my $logger = XAS::Lib::Daemon::Logger->new(
      -alias  => 'logger',
-     -logger => $log,
+     -logger => $logger,
  );
 
 =head1 DESCRIPTION
@@ -177,7 +173,11 @@ Passing that method the supplied log entry.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

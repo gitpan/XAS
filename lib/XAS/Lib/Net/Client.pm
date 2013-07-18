@@ -24,6 +24,8 @@ use XAS::Class
   }
 ;
 
+use Data::Hexdumper;
+
 Params::Validate::validation_options(
     on_fail => sub {
         my $params = shift;
@@ -78,6 +80,8 @@ sub get {
     $self->handle->clearerr;
     $packet = $self->handle->getline();
     chomp($packet);
+
+    $self->log('debug', hexdump($packet));
 
     $self->throw_msg(
         'xas.lib.net.client.get', 
@@ -185,7 +189,11 @@ This reads a "packet" from the socket.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

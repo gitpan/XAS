@@ -1,5 +1,5 @@
 ---
-abstract: 'A framework for distributed applicatons'
+abstract: 'Middleware for Perl'
 author:
   - 'Kevin L. Esteb <kevin@kesteb.us>'
 build_requires:
@@ -15,7 +15,7 @@ name: XAS
 provides:
   XAS:
     file: lib/XAS.pm
-    version: 0.04
+    version: 0.05
   XAS::Apps::Base::Alerts:
     file: lib/XAS/Apps/Base/Alerts.pm
     version: 0.03
@@ -30,6 +30,13 @@ provides:
     version: 0.01
   XAS::Apps::Base::RemoveData:
     file: lib/XAS/Apps/Base/RemoveData.pm
+    version: 0.01
+  XAS::Apps::Base::Spooler:
+    file: lib/XAS/Apps/Base/Spooler.pm
+  XAS::Apps::Base::Supctl:
+    file: lib/XAS/Apps/Base/Supctl.pm
+  XAS::Apps::Base::Supervisor:
+    file: lib/XAS/Apps/Base/Supervisor.pm
     version: 0.01
   XAS::Apps::Database::Schema:
     file: lib/XAS/Apps/Database/Schema.pm
@@ -48,7 +55,7 @@ provides:
     version: 0.01
   XAS::Apps::Test::RPC::Methods:
     file: lib/XAS/Apps/Test/RPC/Methods.pm
-    version: 0.01
+    version: 0.02
   XAS::Apps::Test::RPC::Server:
     file: lib/XAS/Apps/Test/RPC/Server.pm
     version: 0.01
@@ -59,7 +66,7 @@ provides:
     file: lib/XAS/Class.pm
   XAS::Collector::Alert:
     file: lib/XAS/Collector/Alert.pm
-    version: 0.02
+    version: 0.03
   XAS::Collector::Base:
     file: lib/XAS/Collector/Base.pm
     version: 0.02
@@ -109,7 +116,7 @@ provides:
     version: 0.02
   XAS::Lib::Daemon::Logger:
     file: lib/XAS/Lib/Daemon/Logger.pm
-    version: 0.02
+    version: 0.03
   XAS::Lib::Daemon::Logging:
     file: lib/XAS/Lib/Daemon/Logging.pm
     version: 0.02
@@ -134,35 +141,68 @@ provides:
   XAS::Lib::Gearman::Worker:
     file: lib/XAS/Lib/Gearman/Worker.pm
     version: 0.02
+  XAS::Lib::Mixin::Env:
+    file: lib/XAS/Lib/Mixin/Env.pm
+    version: 0.01
+  XAS::Lib::Mixin::Handlers:
+    file: lib/XAS/Lib/Mixin/Handlers.pm
+    version: 0.01
+  XAS::Lib::Mixin::Locking:
+    file: lib/XAS/Lib/Mixin/Locking.pm
+    version: 0.01
   XAS::Lib::Net::Client:
     file: lib/XAS/Lib/Net/Client.pm
     version: 0.02
   XAS::Lib::Net::Server:
     file: lib/XAS/Lib/Net/Server.pm
-    version: 0.02
+    version: 0.03
   XAS::Lib::RPC::JSON::Client:
     file: lib/XAS/Lib/RPC/JSON/Client.pm
     version: 0.02
   XAS::Lib::RPC::JSON::Server:
     file: lib/XAS/Lib/RPC/JSON/Server.pm
-    version: 0.02
+    version: 0.03
+  XAS::Lib::Service:
+    file: lib/XAS/Lib/Service.pm
+    version: 0.01
+  XAS::Lib::Service::Win32:
+    file: lib/XAS/Lib/Service/Win32.pm
+    version: 0.01
   XAS::Lib::Session:
     file: lib/XAS/Lib/Session.pm
     version: 0.04
   XAS::Lib::Spool:
     file: lib/XAS/Lib/Spool.pm
     version: 0.02
+  XAS::Lib::Stomp::Frame:
+    file: lib/XAS/Lib/Stomp/Frame.pm
+    version: 0.01
+  XAS::Lib::Stomp::Frame::Headers:
+    file: lib/XAS/Lib/Stomp/Frame.pm
+    version: 0.01
+  XAS::Lib::Stomp::POE::Client:
+    file: lib/XAS/Lib/Stomp/POE/Client.pm
+    version: 0.01
+  XAS::Lib::Stomp::POE::Filter:
+    file: lib/XAS/Lib/Stomp/POE/Filter.pm
+    version: 0.01
+  XAS::Lib::Stomp::Parser:
+    file: lib/XAS/Lib/Stomp/Parser.pm
+    version: 0.01
+  XAS::Lib::Stomp::Utils:
+    file: lib/XAS/Lib/Stomp/Utils.pm
+    version: 0.01
   XAS::Model::DBM:
     file: lib/XAS/Model/DBM.pm
     version: 0.01
   XAS::Model::Database:
     file: lib/XAS/Model/Database.pm
     version: 0.01
-  XAS::Model::Database::Alert:
-    file: lib/XAS/Model/Database/Alert.pm
+  XAS::Model::Database::Base::Alert:
+    file: lib/XAS/Model/Database/Base/Alert.pm
     version: 0.01
-  XAS::Model::Database::Counter:
-    file: lib/XAS/Model/Database/Counter.pm
+  XAS::Model::Database::Base::Counter:
+    file: lib/XAS/Model/Database/Base/Counter.pm
     version: 0.01
   XAS::Monitor::Base:
     file: lib/XAS/Monitor/Base.pm
@@ -185,6 +225,18 @@ provides:
   XAS::Spooler::Processor:
     file: lib/XAS/Spooler/Processor.pm
     version: 0.01
+  XAS::Supervisor::Controller:
+    file: lib/XAS/Supervisor/Controller.pm
+    version: 0.04
+  XAS::Supervisor::Factory:
+    file: lib/XAS/Supervisor/Factory.pm
+    version: 0.02
+  XAS::Supervisor::Process:
+    file: lib/XAS/Supervisor/Process.pm
+    version: 0.03
+  XAS::Supervisor::RPC::Client:
+    file: lib/XAS/Supervisor/RPC/Client.pm
+    version: 0.03
   XAS::System:
     file: lib/XAS/System.pm
     version: 0.01
@@ -204,12 +256,13 @@ provides:
     file: lib/XAS/Utils.pm
     version: 0.03
 requires:
-  Badger: 0.06
+  Badger: 0.09
   Config::Any: 0
   Config::Tiny: 0
   DBIx::Class: 0.08121
   DBIx::Class::OptimisticLocking: 0
   DBIx::Class::Schema::Config: 0
+  Data::Hexdumper: 0
   DateTime: 0.55
   DateTime::Format::MySQL: 0
   DateTime::Format::Pg: 0
@@ -222,8 +275,9 @@ requires:
   POE: 1.289
   Params::Validate: 0.95
   Pod::POM: 0
+  Set::Light: 0
   Text::Autoformat: 0
   Try::Tiny: 0.04
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.04
+version: 0.05

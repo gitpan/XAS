@@ -21,7 +21,7 @@ sub setup {
 sub main {
     my $self = shift;
 
-    $self->log->info('Starting up');
+    $self->log('info', 'Starting up');
     $self->setup();
 
     $self->{schema}->create_ddl_dir(
@@ -30,7 +30,7 @@ sub main {
         $self->directory,
     );
 
-    $self->log->info('Shutting down');
+    $self->log('info', 'Shutting down');
 
 }
 
@@ -60,9 +60,13 @@ This module will create a schema for the XAS database.
 
 =head1 SEE ALSO
 
- bin/create_schema.pl
+=over 4
 
-L<XAS|XAS>
+=item bin/create_schema.pl
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

@@ -627,9 +627,13 @@ The record used to update the table entry.
 
 =head1 SEE ALSO
 
- DBIx::Class
+=over 4
 
-L<XAS|XAS>
+=item DBIx::Class
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

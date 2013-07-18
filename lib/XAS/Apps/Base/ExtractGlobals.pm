@@ -43,11 +43,11 @@ sub parse_file {
 sub main {
     my $self = shift;
 
-    $self->log->debug('Starting main section');
+    $self->log('debug', 'Starting main section');
 
     $self->parse_file();
 
-    $self->log->debug('Ending main section');
+    $self->log('debug', 'Ending main section');
 
 }
 
@@ -106,9 +106,13 @@ Defines which database to extract data from.
 
 =head1 SEE ALSO
 
- bin/pg_extract_global.pl
+=over 4
 
-L<XAS|XAS>
+=item bin/pg_extract_global.pl
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

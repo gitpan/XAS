@@ -27,6 +27,11 @@ This file configures the environment. It sources /opt/xas/environment and
 redefines the PATH and MANPATH environment variables. It is loaded into the
 current shell.
 
+=item B</etc/logrotate.d/xas>
+
+This file contains the directives for logrotate to maintain the various log
+files.
+
 =item B</opt/xas/etc/database.ini>
 
 This file controls how the database is accessed. By default this is for SQLite.
@@ -59,7 +64,11 @@ is dependent on that system. Additional help can be had with:
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

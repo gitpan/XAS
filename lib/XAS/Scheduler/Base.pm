@@ -27,15 +27,6 @@ Params::Validate::validation_options(
 # Public Methods
 # ----------------------------------------------------------------------
 
-sub log {
-    my ($self, $level, $message) = @_;
-
-    my $logger = $self->logger;
-
-    $poe_kernel->post($logger, $level, $message);
-
-}
-
 sub exception_handler {
     my ($self, $ex) = @_;
 
@@ -120,7 +111,11 @@ The exception that is to be handled.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

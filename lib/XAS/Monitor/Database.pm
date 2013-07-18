@@ -188,7 +188,11 @@ This is triggered by the schedule and calls the monitor() method.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

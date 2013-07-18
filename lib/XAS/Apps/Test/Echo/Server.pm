@@ -24,7 +24,7 @@ sub main {
 
     $logger = XAS::Lib::Daemon::Logger->new(
         -alias  => 'logger',
-        -logger => $self->log
+        -logger => $self->logger
     );
 
     $server = XAS::Lib::Net::Server->new(
@@ -34,11 +34,11 @@ sub main {
         -address => $self->address,
     );
 
-    $self->log->info('Starting up');
+    $self->log('info', 'Starting up');
 
     $poe_kernel->run();
 
-    $self->log->info('Shutting down');
+    $self->log('info', 'Shutting down');
 
 }
 
@@ -91,9 +91,13 @@ This specifies three options that may be on the command line. They are
 
 =head1 SEE ALSO
 
- sbin/echo-server.pl
+=over 4
 
-L<XAS|XAS>
+=item sbin/echo-server.pl
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

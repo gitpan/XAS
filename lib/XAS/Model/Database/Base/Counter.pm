@@ -1,4 +1,4 @@
-package XAS::Model::Database::Counter;
+package XAS::Model::Database::Base::Counter;
 
 our $VERSION = '0.01';
 

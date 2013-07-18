@@ -27,15 +27,6 @@ Params::Validate::validation_options(
 # Public Methods
 # ----------------------------------------------------------------------
 
-sub log {
-    my ($self, $level, $message) = @_;
-
-    my $logger = $self->logger;
-
-    $poe_kernel->post($logger, $level, $message);
-
-}
-
 sub exception_handler {
     my ($self, $ex) = @_;
 
@@ -93,23 +84,6 @@ that are needed by the other modules.
 
 =head1 METHODS
 
-=head2 log($level, $message)
-
-This method sends log items to the logger session. It takes two parameters:
-level and message. Where level is one supported by your logger.
-
-=over 4
-
-=item B<$level>
-
-The log level to use.
-
-=item B<$message>
-
-The entry to write to the log file.
-
-=back
-
 =head2 exception_handler($ex)
 
 A common exception handler for error reporting. It takes one parameter, 
@@ -125,7 +99,11 @@ The exception that is to be handled.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

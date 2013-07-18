@@ -6,7 +6,10 @@ use POE;
 use DateTime;
 use Try::Tiny;
 use Params::Validate;
-use XAS::Model::Database 'Alert';
+use XAS::Model::Database
+  schema => 'XAS::Model::Database::Base',
+  table  => 'Alert'
+;
 
 use XAS::Class
   version    => $VERSION,
@@ -172,7 +175,11 @@ A reference to it's self.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

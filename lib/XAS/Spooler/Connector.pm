@@ -14,6 +14,14 @@ use XAS::Class
       nohostname  => "no Hostname was defined",
       noprocessor => "no Processor was defined",
       noqueue     => "no Queue was defined",
+  },
+  vars => {
+    PARAMS => {
+        -processor => 1,
+        -queues    => 1,
+        -hostname  => 1,
+        
+    }
   }
 ;
 
@@ -27,10 +35,10 @@ sub handle_receipt {
     my ($kernel, $self, $frame) = @_[KERNEL, OBJECT, ARG0];
 
     my $count = 0;
-    my $alias = $self->config('Alias');
-    my ($palias, $filename) = split(';', $frame->{headers}->{'receipt-id'});
+    my $alias = $self->alias;
+    my ($palias, $filename) = split(';', $frame->header->receipt_id);
 
-    $self->log($kernel, 'debug', "$alias: alias = $palias, receipt = $filename");
+    $self->log('debug', "$alias: alias = $palias, receipt = $filename");
 
     $kernel->post($palias, 'unlink_file', $filename);
 
@@ -39,55 +47,55 @@ sub handle_receipt {
 sub connection_down {
     my ($kernel, $self) = @_[KERNEL,OBJECT];
 
-    my $alias = $self->config('Alias');
-    my $processor = $self->config('Processor');
+    my $alias = $self->alias;
+    my $processor = $self->processor;
 
-    $self->log($kernel, 'debug', "$alias: entering connection_down()");
+    $self->log('debug', "$alias: entering connection_down()");
 
     $processor->stop_scan();
 
-    $self->log($kernel, 'debug', "$alias: leaving connection_down()");
+    $self->log('debug', "$alias: leaving connection_down()");
 
 }
 
 sub connection_up {
     my ($kernel, $self) = @_[KERNEL,OBJECT];
 
-    my $alias = $self->config('Alias');
-    my $processor = $self->config('Processor');
+    my $alias = $self->alias;
+    my $processor = $self->processor;
 
-    $self->log($kernel, 'debug', "$alias: entering connection_up()");
+    $self->log('debug', "$alias: entering connection_up()");
 
     $processor->start_scan();
 
-    $self->log($kernel, 'debug', "$alias: leaving connection_up()");
+    $self->log('debug', "$alias: leaving connection_up()");
 
 }
 
 sub handle_shutdown {
     my ($self, $kernel) = @_;
 
-    my $alias = $self->config('Alias');
-    my $processor = $self->config('Processor');
+    my $alias = $self->alias;
+    my $processor = $self->processor;
 
-    $self->log($kernel, 'debug', "$alias: entering handle_shutdown()");
+    $self->log('debug', "$alias: entering handle_shutdown()");
 
     $processor->shutdown();
 
-    $self->log($kernel, 'debug', "$alias: leaving handle_shutdown()");
+    $self->log('debug', "$alias: leaving handle_shutdown()");
 
 }
 
 sub gather_data {
     my ($kernel, $self, $palias, $type, $packet, $file) = @_[KERNEL,OBJECT,ARG0...ARG3];
 
-    my $alias = $self->config('Alias');
+    my $alias = $self->alias;
 
-    $self->log($kernel, 'debug', "$alias: entering gather_data()");
+    $self->log('debug', "$alias: entering gather_data()");
 
     $self->send_packet($kernel, $palias, $type, $packet, $file);
 
-    $self->log($kernel, 'debug', "$alias: leaving gather_data()");
+    $self->log('debug', "$alias: leaving gather_data()");
 
 }
 
@@ -98,10 +106,10 @@ sub send_packet {
     my $queue;
     my $frame;
     my $message;
-    my $alias = $self->config('Alias');
-    my $queues = $self->config('Queues');
+    my $alias = $self->alias;
+    my $queues = $self->queues;
 
-    $message->{hostname} = $self->config('Hostname');
+    $message->{hostname} = $self->hostname;
     $message->{timestamp} = time();
     $message->{type} = $type;
     $message->{data} = $packet;
@@ -118,15 +126,13 @@ sub send_packet {
     }
 
     $frame = $self->stomp->send(
-        {
-            destination => $queue, 
-            data        => $data, 
-            receipt     => sprintf("%s;%s", $palias, $file),
-            persistent  => 'true'
-        }
+        -destination => $queue, 
+        -message     => $data, 
+        -receipt     => sprintf("%s;%s", $palias, $file),
+        -persistent  => 'true'
     );
 
-    $self->log($kernel, 'info', "$alias: sending $file to $queue");
+    $self->log('info', "$alias: sending $file to $queue");
 
     $kernel->call($alias, 'send_data', $frame);
 
@@ -135,43 +141,6 @@ sub send_packet {
 # ---------------------------------------------------------------------
 # Public Methods
 # ---------------------------------------------------------------------
-
-sub spawn {
-    my $class = shift;
-
-    my %args = @_;
-    my $self = $class->SUPER::spawn(@_);
-
-    unless (defined($args{Hostname})) {
-
-        $self->throw_msg(
-            'xas.spooler.connector.nohostname',
-            'nohostname'
-        );
-
-    }
-
-    unless (defined($args{Processor})) {
-
-        $self->throw_msg(
-            'xas.spooler.connector.noprocessor',
-            'noprocessor'
-        );
-
-    }
-
-    unless (defined($args{Queues})) {
-
-        $self->throw_msg(
-            'xas.spooler.connector.noqueue',
-            'noqueue'
-        );
-
-    }
-
-    return $self;
-
-}
 
 sub _get_queue {
     my ($self, $type, $queues) = @_;
@@ -196,16 +165,16 @@ XAS::Spooler::Connector - Perl extension for the XAS environment
 
   use XAS::Spooler::Connector;
 
-  my $connection = XAS::Spooler::Connector->spawn(
-      RemoteAddress   => $hostname,
-      RemotePort      => $port,
-      RetryReconnect  => TRUE,
-      EnableKeepAlive => TRUE,
-      Hostname        => $xas->host,
-      Alias           => 'connector',
-      Processor       => $processor,
-      Logger          => 'logger',
-      Queue           => $ddc_queue
+  my $connection = XAS::Spooler::Connector->new(
+      -host             => $hostname,
+      -port             => $port,
+      -retry_reconnect  => TRUE,
+      -enable_keepAlive => TRUE,
+      -hostname         => $xas->host,
+      -alias            => 'connector',
+      -processor        => $processor,
+      -logger           => 'logger',
+      -queue            => $ddc_queue
   );
 
 =head1 DESCRIPTION
@@ -215,7 +184,7 @@ the necessary events and methods so the Factory can do its job.
 
 =head1 PUBLIC METHODS
 
-=head2 spawn
+=head2 new
 
 This method creates the initial session, setups the scheduling for 
 gather_data() and initializes JSON processing. It takes the following
@@ -223,15 +192,15 @@ configuration items:
 
 =over
 
-=item B<Processor>
+=item B<-processor>
 
 A pointer to the ProcessFactory object.
 
-=item B<Queue>
+=item B<-queue>
 
 The name of the queue to send messages to on the message queue server.
 
-=item B<Hostname>
+=item B<-hostname>
 
 The name of the host that this is running on.
 
@@ -260,7 +229,11 @@ This event will format the data to be sent to the message queue server.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

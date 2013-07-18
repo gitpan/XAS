@@ -144,15 +144,6 @@ sub unlink_file {
 # Public Methods
 # ---------------------------------------------------------------------
 
-sub log {
-    my ($self, $level, @args) = @_;
-
-    my $logger = $self->logger;
-
-    $poe_kernel->post($logger, $level, @args);
-
-}
-
 sub initialize {
     my ($self, $kernel, $session) = @_;
 
@@ -258,7 +249,11 @@ Removes the unneeded file from the directory.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

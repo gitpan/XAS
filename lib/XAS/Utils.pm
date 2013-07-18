@@ -5,11 +5,11 @@ our $VERSION = '0.03';
 use DateTime;
 use Try::Tiny;
 use XAS::Exception;
-use POSIX ':sys_wait_h';
 use DateTime::Format::Pg;
 use Digest::MD5 'md5_hex';
 use Params::Validate ':all';
 use DateTime::Format::Strptime;
+use POSIX qw(:sys_wait_h setsid);
 
 use XAS::Class
   version    => $VERSION,
@@ -17,17 +17,17 @@ use XAS::Class
   constants  => 'HASH ARRAY',
   filesystem => 'Dir File',
   constant => {
-      ERRMSG => 'invalid parameters passed from %s at line %s', 
+    ERRMSG => 'invalid parameters passed from %s at line %s', 
   },
   exports => {
-      all => 'db2dt dt2db trim ltrim rtrim daemonize hash_walk keygen load_module bool init_module load_module compress exitcode kill_proc spawn',
-      any => 'db2dt dt2db trim ltrim rtrim daemonize hash_walk keygen load_module bool init_module load_module compress exitcode kill_proc spawn',
-      tags => {
-          dates   => 'db2dt dt2db',
-          modules => 'init_module load_module',
-          strings => 'trim ltrim rtrim compress',
-          process => 'daemonize spawn kill_proc exitcode',
-      }
+    all => 'db2dt dt2db trim ltrim rtrim daemonize hash_walk keygen load_module bool init_module load_module compress exitcode kill_proc spawn _do_fork',
+    any => 'db2dt dt2db trim ltrim rtrim daemonize hash_walk keygen load_module bool init_module load_module compress exitcode kill_proc spawn _do_fork',
+    tags => {
+      dates   => 'db2dt dt2db',
+      modules => 'init_module load_module',
+      strings => 'trim ltrim rtrim compress',
+      process => 'daemonize spawn kill_proc exitcode _do_fork',
+    }
   }
 ;
 
@@ -267,7 +267,7 @@ sub exitcode {
 
 }
 
-sub daemonize {
+sub _do_fork {
 
     my $child = fork();
 
@@ -284,12 +284,24 @@ sub daemonize {
 
     exit(0) if ($child);
 
-    POSIX::setsid();
+}
+
+sub daemonize {
+
+    _do_fork(); # initial fork
+    setsid();   # become session leader
+    _do_fork(); # second fork to prevent aquiring a controlling terminal
+
+    # change directory to a netural place and set the umask
+
     chdir('/');
-    open(STDIN,  ">/dev/null");
-    open(STDOUT, ">/dev/null");
-    open(STDERR, ">/dev/null");
     umask(0);
+
+    # redirect our standard file handles
+
+    open(STDIN,  '<', '/dev/null');
+    open(STDOUT, '>', '/dev/null');
+    open(STDERR, '>', '/dev/null');
 
 }
 
@@ -697,9 +709,13 @@ The name of the module.
 
 =head1 SEE ALSO
 
-L<Badger::Utils|Badger::Utils>
+=over 4
 
-L<XAS|XAS>
+=item L<Badger::Utils|Badger::Utils>
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

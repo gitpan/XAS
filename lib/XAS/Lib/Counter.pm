@@ -3,7 +3,9 @@ package XAS::Lib::Counter;
 our $VERSION = '0.02';
 
 use Params::Validate ':all';
-use XAS::Model::Database 'Counter';
+use XAS::Model::Database 
+  schema => 'XAS::Model::Database::Base',
+  table  => 'Counter';
 
 use XAS::Class
   version => $VERSION,
@@ -220,7 +222,11 @@ The name of the counter.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

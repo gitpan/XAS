@@ -134,6 +134,16 @@ The following are the modules provided with the system.
 
 =item L<XAS::Lib::Spool|XAS::Lib::Spool>
 
+=item L<XAS::Lib::Stomp::Frame|XAS::Lib::Stomp::Frame>
+
+=item L<XAS::Lib::Stomp::Parser|XAS::Lib::Stomp::Parser>
+
+=item L<XAS::Lib::Stomp::Utils|XAS::Lib::Stomp::Utils>
+
+=item L<XAS::Lib::Stomp::POE::Client|XAS::Lib::Stomp::POE::Client>
+
+=item L<XAS::Lib::Stomp::POE::Filter|XAS::Lib::Stomp::POE::Filter>
+
 =back
 
 =head2 The Database Interface

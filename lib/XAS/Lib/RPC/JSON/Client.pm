@@ -10,15 +10,15 @@ use XAS::Class
   codec     => 'JSON',
   constants => ':jsonrpc',
   messages => {
-      jsonerr  => "error code: %s, reason: %s, extended: %s",
-      invid    => "the returned id doesn't match the supplied id",
-      errorapp => '%s',
+    jsonerr  => "error code: %s, reason: %s, extended: %s",
+    invid    => "the returned id doesn't match the supplied id",
+    errorapp => '%s',
   },
   vars => {
-      PARAMS => {
-          -port => { optional => 1, default => RPC_DEFAULT_PORT },
-          -host => { optional => 1, default => RPC_DEFAULT_ADDRESS },
-      }
+    PARAMS => {
+      -port => { optional => 1, default => RPC_DEFAULT_PORT },
+      -host => { optional => 1, default => RPC_DEFAULT_ADDRESS },
+    }
   }
 ;
 
@@ -39,15 +39,14 @@ use Data::Dumper;
 sub call {
     my $self = shift;
 
+    my %p = validate(@_, {
+        -method => 1,
+        -id     => 1,
+        -params => { type => HASHREF }
+    });
+
     my $params;
     my $response;
-    my %p = validate(@_,
-        {
-            -method => 1,
-            -id     => 1,
-            -params => { type => HASHREF }
-        }
-    );
 
     while (my ($key, $value) = each(%{$p{'-params'}})) {
 
@@ -189,7 +188,11 @@ A hashref of the parameters to be passed to the method.
 
 =head1 SEE ALSO
 
-L<XAS|XAS>
+=over 4
+
+=item L<XAS|XAS>
+
+=back
 
 =head1 AUTHOR
 

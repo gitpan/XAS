@@ -1,6 +1,6 @@
 package XAS;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 1;
 
@@ -8,13 +8,12 @@ __END__
 
 =head1 NAME
 
-XAS - A framework for distributed applicatons
+XAS - Middleware for Perl
 
 =head1 DESCRIPTION
 
-Frameworks mean differant things to differant people. In this case we are
-trying to present a consistent environment, option handling, logging,
-communications, notifications and database access in distributed applications. 
+Middleware is used to tie distributed applications together. This package
+provides the framework to do so with Perl.
 
 =over 4
 
@@ -31,13 +30,6 @@ communications, notifications and database access in distributed applications.
 =item B<L<Theory of Operation|XAS::Docs::Theory>>
 
 =back
-
-=head1 WHAT NOW?
-
-Wow, you have a running system, now what do you do with it. As stated above
-this system is a framework. It dosen't do anything on it's own. You need to 
-write the code to do somethimg useful. The tools are provided and examples are
-available. 
 
 =head1 SEE ALSO
 
