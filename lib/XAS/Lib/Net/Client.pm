@@ -3,43 +3,31 @@ package XAS::Lib::Net::Client;
 our $VERSION = '0.02';
 
 use IO::Socket;
-use Params::Validate ':all';
 
 use XAS::Class
+  debug     => 0,
   version   => $VERSION,
   base      => 'XAS::Base',
   utils     => 'trim',
   accessors => 'handle',
   mutators  => 'timeout',
-  messages => {
-      connection => "unable to connect to %s on port %s",
-      network    => "a network communication error has occured, reason: %s",
-  },
   vars => {
-      PARAMS => {
-          -port    => 1,
-          -host    => 1,
-          -timeout => { optional => 1, default => 60 },
-      }
+    PARAMS => {
+      -port    => 1,
+      -host    => 1,
+      -timeout => { optional => 1, default => 60 },
+    }
   }
 ;
 
-use Data::Hexdumper;
-
-Params::Validate::validation_options(
-    on_fail => sub {
-        my $params = shift;
-        my $class  = __PACKAGE__;
-        XAS::Base::validation_exception($params, $class);
-    }
-);
+#use Data::Hexdumper;
 
 # ----------------------------------------------------------------------
 # Public Methods
 # ----------------------------------------------------------------------
 
 sub connect {
-    my ($self) = @_;
+    my $self = shift;
 
     $self->{handle} = IO::Socket::INET->new(
         Proto    => 'tcp',
@@ -55,7 +43,7 @@ sub connect {
 }
 
 sub disconnect {
-    my ($self) = @_;
+    my $self = shift;
 
     if ($self->handle->connected) {
 
@@ -66,7 +54,7 @@ sub disconnect {
 }
 
 sub get {
-    my ($self) = @_;
+    my $self = shift;
 
     my $packet;
     my $timeout = $self->handle->timeout;
@@ -81,7 +69,7 @@ sub get {
     $packet = $self->handle->getline();
     chomp($packet);
 
-    $self->log('debug', hexdump($packet));
+#    $self->log->debug(hexdump($packet));
 
     $self->throw_msg(
         'xas.lib.net.client.get', 
@@ -96,8 +84,9 @@ sub get {
 }
 
 sub put {
-    my ($self, $packet) = @_;
-
+    my $self = shift;
+    
+    my ($packet) = $self->validate_params(\@_, [1]);
     my $timeout = $self->handle->timeout;
 
     $self->handle->timeout($self->timeout) if ($self->timeout);
@@ -111,6 +100,13 @@ sub put {
     ) if ($self->handle->error);
 
     $self->handle->timeout($timeout);
+
+}
+
+sub setup {
+    my $self = shift;
+
+    warn "setup() needs to be overridden\n";
 
 }
 
@@ -135,15 +131,15 @@ XAS::Lib::Net::Client - The network client interface for the XAS environment
 
 =head1 DESCRIPTION
 
-This module implements a simple text orientated nework protocol. All "packets" 
-will have an explict "\012\015" appended. This delineates the "packets" and is
-network netural. No attempt is made to decipher these "packets". 
+This module implements a simple text orientated network protocol. All "packets" 
+will have an explicit "\012\015" appended. This delineates the "packets" and is
+network neutral. No attempt is made to decipher these "packets". 
 
 =head1 METHODS
 
 =head2 new
 
-This initilaizes the module and can take three parameters. It doesn't actually
+This initializes the module and can take three parameters. It doesn't actually
 make a network connection.
 
 =over 4
@@ -155,7 +151,7 @@ The port number to attach too.
 =item B<-host>
 
 The host to use for the connection. This can be an IP address or
-a hostname.
+a host name.
 
 =item B<-timeout>
 
@@ -201,10 +197,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

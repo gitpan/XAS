@@ -1,6 +1,6 @@
 package XAS::Utils;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use DateTime;
 use Try::Tiny;
@@ -12,20 +12,30 @@ use DateTime::Format::Strptime;
 use POSIX qw(:sys_wait_h setsid);
 
 use XAS::Class
+  debug      => 0,
   version    => $VERSION,
-  base       => 'XAS::Base Badger::Utils',
+  base       => 'Badger::Utils XAS::Base',
   constants  => 'HASH ARRAY',
   filesystem => 'Dir File',
   constant => {
     ERRMSG => 'invalid parameters passed from %s at line %s', 
   },
   exports => {
-    all => 'db2dt dt2db trim ltrim rtrim daemonize hash_walk keygen load_module bool init_module load_module compress exitcode kill_proc spawn _do_fork',
-    any => 'db2dt dt2db trim ltrim rtrim daemonize hash_walk keygen load_module bool init_module load_module compress exitcode kill_proc spawn _do_fork',
+    all => 'db2dt dt2db trim ltrim rtrim daemonize hash_walk  
+            load_module bool init_module load_module compress exitcode 
+            kill_proc spawn _do_fork glob2regex dir_walk
+            env_store env_restore env_create env_parse env_dump
+            left right mid instr',
+    any => 'db2dt dt2db trim ltrim rtrim daemonize hash_walk  
+            load_module bool init_module load_module compress exitcode 
+            kill_proc spawn _do_fork glob2regex dir_walk
+            env_store env_restore env_create env_parse env_dump
+            left right mid instr',
     tags => {
       dates   => 'db2dt dt2db',
+      env     => 'env_store env_restore env_create env_parse env_dump',
       modules => 'init_module load_module',
-      strings => 'trim ltrim rtrim compress',
+      strings => 'trim ltrim rtrim compress left right mid instr',
       process => 'daemonize spawn kill_proc exitcode _do_fork',
     }
   }
@@ -39,7 +49,7 @@ Params::Validate::validation_options(
     }
 );
 
-use Data::Dumper;
+#use Data::Dumper;
 
 # ----------------------------------------------------------------------
 # Public Methods
@@ -48,13 +58,11 @@ use Data::Dumper;
 # recursively walk a HOH
 sub hash_walk {
 
-    my %p = validate(@_,
-        {
-            -hash     => { type => HASHREF }, 
-            -keys     => { type => ARRAYREF }, 
-            -callback => { type => CODEREF },
-        }
-    );
+    my %p = validate(@_, {
+        -hash     => { type => HASHREF }, 
+        -keys     => { type => ARRAYREF }, 
+        -callback => { type => CODEREF },
+    });
 
     my $hash     = $p{'-hash'};
     my $key_list = $p{'-keys'};
@@ -83,6 +91,47 @@ sub hash_walk {
         }
 
         pop(@$key_list);
+
+    }
+
+}
+
+# recursively walk a directory structure
+sub dir_walk {
+    my %p = validate_with(
+        params => \@_,
+        spec => {
+            -directory => { isa  => 'Badger::Filesystem::Directory' },
+            -callback  => { type => CODEREF },
+            -filter    => { optional => 1, default => qr/.*/, callbacks => {
+                'must be a compiled regex' => sub {
+                    return (ref shift() eq 'Regexp') ? 1 : 0;
+                }
+            }},
+        },
+        on_fail => sub {
+            my $param = shift;
+            my $class = (caller(1))[3];
+            XAS::Base::validation_exception($param, $class);
+        }
+    );
+
+    my $folder   = $p{'-directory'};
+    my $filter   = $p{'-filter'};
+    my $callback = $p{'-callback'};
+
+    my @files = grep ( $_->path =~ /$filter/, $folder->files() );
+    my @folders = $folder->dirs;
+
+    foreach my $file (@files) {
+
+        $callback->($file);
+
+    }
+
+    foreach my $folder (@folders) {
+
+        dir_walk(-directory => $folder, -filter => $filter, -callback => $callback);
 
     }
 
@@ -129,6 +178,56 @@ sub compress {
 
 }
 
+# emulate Basics string function left()
+sub left {
+    my $string = shift;
+    my $offset = shift;
+
+    return substr($string, 0, $offset);
+
+}
+
+# emulate Basics string function right()
+sub right {
+    my $string = shift;
+    my $offset = shift;
+
+    return substr($string, -($offset));
+
+}
+
+# emulate Basics string function mid()
+sub mid {
+    my $string = shift;
+    my $start  = shift;
+    my $length = shift;
+
+    return substr($string, $start - 1, $length);
+
+}
+
+# emulate Basics string function instr()
+sub instr {
+    my $start   = shift;
+    my $string  = shift;
+    my $compare = shift;
+
+    if ($start =~ /^[0-9\-]+/) {
+
+        $start++;
+
+    } else {
+
+        $compare = $string;
+        $string = $start;
+        $start = 0;
+
+    }
+
+    return index($string, $compare, $start) + 1;
+
+}
+
 sub bool {
     my $item = shift;
 
@@ -139,12 +238,10 @@ sub bool {
 
 sub spawn {
 
-    my %p = validate(@_,
-        {
-            -command => 1,
-            -timeout => { optional => 1, default => 0 },
-        }
-    );
+    my %p = validate(@_, {
+        -command => 1,
+        -timeout => { optional => 1, default => 0 },
+    });
 
     local $SIG{ALRM} = sub {
         my $sig_name = shift;
@@ -232,12 +329,10 @@ sub spawn {
 
 sub kill_proc {
 
-    my %p = validate(@_,
-        {
-            -signal => 1,
-            -pid    => 1,
-        }
-    );
+    my %p = validate(@_, {
+        -signal => 1,
+        -pid    => 1,
+    });
 
     my $time = 10;
     my $status = 0;
@@ -385,78 +480,11 @@ sub dt2db {
 
 }
 
-sub keygen {
-
-    my %p = validate(@_,
-        {
-            -url    => 1, 
-            -params => 1, 
-        }
-    );
-
-    my $url    = $p{'-url'};
-    my $params = $p{'-params'};
-
-    my $hash;
-    my $key = $url;
-    my $ref = ref($params);
-
-    if ($ref eq HASH) {
-
-        foreach my $k (sort (keys(%$params))) {
-
-            $key .= $k . $params->{$k};
-
-        }
-
-    } elsif ($ref eq ARRAY) {
-
-        my @p = sort {
-            (($a->{field} cmp $b->{field}) or
-             (($a->{comparison} or '') cmp ($b->{comparison} or '')));
-        } @$params;
-
-        foreach my $f (@p) {
-
-            if ($f->{type} eq 'list') {
-
-                $key .= $f->{field} . join(',', sort(@{$f->{value}}));
-
-            } else {
-
-                $key .= $f->{field} . $f->{value};
-
-            }
-
-        }
-
-    } else {
-
-        my ($package, $file, $line) = caller;
-        my $ex = XAS::Exception->new(
-            type => 'xas.utils.keygen',
-            info => sprintf(ERRMSG, $package, $line)
-        );
-
-        $ex->throw;
-
-    }
-
-    $key =~ s/\///g;
-    $key =~ s/://g;
-    $key =~ s/-//g;
-    $key =~ s/_//g;
-    $key =~ s/,//g;
-    $key =~ s/\.//g;
-
-    $hash = md5_hex($key);
-
-    return $hash;
-
-}
-
 sub init_module {
-    my ($module, $params) = validate_pos(@_, 1, {optional => 1, type => HASHREF});
+    my ($module, $params) = validate_pos(@_, 
+        1, 
+        {optional => 1, type => HASHREF}
+    );
 
     my $obj;
     my @parts;
@@ -543,6 +571,101 @@ sub load_module {
 
 }
 
+sub glob2regex {
+    my $globstr = shift;
+
+    my %patmap = (
+        '*' => '.*',
+        '?' => '.',
+        '[' => '[',
+        ']' => ']',
+    );
+
+    $globstr =~ s{(.)} { $patmap{$1} || "\Q$1" }ge;
+
+    return '^' . $globstr . '$';
+
+}
+
+sub env_store {
+
+    my %env;
+
+    while ((my $key, my $value) = each(%ENV)) {
+
+        delete $ENV{$key};
+        $env{$key} = $value;
+
+    }
+
+    return \%env;
+
+}
+
+sub env_restore {
+    my $env = shift;
+
+    while ((my $key, my $value) = each(%ENV)) {
+
+        delete $ENV{$key};
+
+    }
+
+    while ((my $key, my $value) = each(%{$env})) {
+
+        $ENV{$key} = $value;
+
+    }
+
+}
+
+sub env_create {
+    my $env = shift;
+
+    while ((my $key, my $value) = each(%{$env})) {
+
+        $ENV{$key} = $value;
+
+    }
+
+}
+
+sub env_parse {
+    my $env = shift;
+
+    my ($key, $value, %env);
+    my @envs = split(';;', $env);
+
+    foreach my $y (@envs) {
+
+        ($key, $value) = split('=', $y);
+        $env{$key} = $value;
+
+    }
+
+    return \%env;
+
+}
+
+sub env_dump {
+
+    my $env;
+
+    while ((my $key, my $value) = each(%ENV)) {
+
+        $env .= "$key=$value;;";
+
+    }
+
+    # remove the ;; at the end
+
+    chop $env;
+    chop $env;
+
+    return $env;
+
+}
+
 1;
 
 __END__
@@ -580,19 +703,43 @@ string: YYYY-MM-DD HH:MM:SS
 
 =head2 trim($string)
 
-Trim the whitespace from the beginning and end of a string.
+Trim the whitespace from the beginning and end of $string.
 
 =head2 ltrim($string)
 
-Trim the whitespace from the end of a string.
+Trim the whitespace from the end of $string.
 
 =head2 rtrim($string)
 
-Trim the whitespace from the beginning of a string.
+Trim the whitespace from the beginning of $string.
 
 =head2 compress($string)
 
-Reduces multiple whitespace to a single space.
+Reduces multiple whitespace to a single space in $string.
+
+=head2 left($string, $offset)
+
+Return the left chunk of $string up to $offset. Useful for porting
+VBS code. Makes allowances that VBS strings are ones based while 
+Perls are zero based.
+
+=head2 right($string, $offset)
+
+Return the right chunk of $string starting at $offset. Useful for porting 
+VBS code. Makes allowances that VBS strings are ones based while Perls 
+are zero based.
+
+=head2 mid($string, $offset, $length)
+
+Return the chunk of $string starting at $offset for $length characters.
+Useful for porting VBS code. Makes allowances that VBS strings are ones
+based while Perls are zero based.
+
+=head2 instr($start, $string, $compare)
+
+Return the position in $string of $compare. You may offset within the
+string with $start. Useful for porting VBS code. Makes allowances that
+VBS strings are one based while Perls are zero based.
 
 =head2 spawn
 
@@ -612,7 +759,7 @@ An optional timeout in seconds. Default is none.
 
 =head2 exitcode
 
-Decodes perls exit code of a cli process. Returns two items.
+Decodes Perls version of the exit code from a cli process. Returns two items.
 
  Example:
 
@@ -624,10 +771,23 @@ Decodes perls exit code of a cli process. Returns two items.
 Become a daemon. This will set the process as a session lead, change to '/',
 clear the protection mask and redirect stdin, stdout and stderr to /dev/null.
 
+=head2 glob2regx($glob)
+
+This method will take a shell glob pattern and convert it into a Perl regex.
+This also works with DOS/Windows wildcards.
+
+=over 4
+
+=item B<$glob>
+
+The wildcard to convert.
+
+=back
+
 =head2 hash_walk
 
 This routine will walk a HOH and does a callback on the key/values that are 
-found. It takes three named parameters:
+found. It takes these parameters:
 
 =over 4
 
@@ -661,20 +821,24 @@ A list of the key depth.
 
 =back
 
-=head2 keygen
+=head2 dir_walk
 
-This routine takes a set of parameters formated like a ExtJS 4.1 request and
-generates a md5 hash value from them.
+This will walk a directory structure and execute a callback for the found 
+files. It takes these parameters:
 
 =over 4
 
-=item B<-url>
+=item B<-directory>
 
-A URL.
+The root directory to start from.
 
-=item B<-params>
+=item B<-filter>
 
-The parameters. 
+A compiled regex to compare files against.
+
+=item B<-callback>
+
+The callback to execute when matching files are found.
 
 =back
 
@@ -707,13 +871,52 @@ The name of the module.
 
 =back
 
+=head2 env_store
+
+Remove all items from the $ENV variable and store them in a hash variable.
+
+  Example:
+    my $env = env_store();
+
+=head2 env_restore
+
+Remove all items from $ENV variable and restore it back to a saved hash variable.
+
+  Example:
+    env_restore($env);
+
+=head2 env_create
+
+Store all the items from a hash variable into the $ENV varable.
+
+  Example:
+    env_create($env);
+
+=head2 env_parse
+
+Take a formated string and parse it into a hash variable. The string must have
+this format: "item=value;;item2=value2";
+
+  Example:
+    my $string = "item=value;;item2=value2";
+    my $env = env_parse($string);
+    env_create($env);
+
+=head2 env_dump
+
+Take the items from the current $ENV variable and create a formated string.
+
+  Example:
+    my $string = env_dump();
+    my $env = env_create($string);
+
 =head1 SEE ALSO
 
 =over 4
 
-=item L<Badger::Utils|Badger::Utils>
-
 =item L<XAS|XAS>
+
+=item L<Badger::Utils|http://badgerpower.com/docs/Badger/Utils.html>
 
 =back
 
@@ -723,10 +926,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

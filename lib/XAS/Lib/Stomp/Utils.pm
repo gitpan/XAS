@@ -3,32 +3,17 @@ package XAS::Lib::Stomp::Utils;
 our $VERSION = '0.01';
 
 use XAS::Lib::Stomp::Frame;
-use Params::Validate ':all';
 
 use XAS::Class
+  debug   => 0,
   version => $VERSION,
   base    => 'XAS::Base',
-  messages => {
-      noid  => 'v%s requires an id',
-      nosub => 'v%s requires a subscription',
-      noque => 'v%s requires a destination',
-      nosup => "v%s doesn't support this frame type: %s",
-      nopar => "you have invalid paramters for v%s",
-  },
   vars => {
     PARAMS => {
       -target  => { optional => 1, default => '1.0', regex => qr/(1\.0|1\.1|1\.2)/ },
     }
   }
 ;
-
-Params::Validate::validation_options(
-    on_fail => sub {
-        my $params = shift;
-        my $class  = __PACKAGE__;
-        XAS::Base::validation_exception($params, $class);
-    }
-);
 
 #use Data::Dumper;
 
@@ -39,7 +24,7 @@ Params::Validate::validation_options(
 sub connect {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -login      => { optional => 1, default => undef },
         -passcode   => { optional => 1, default => undef },
         -host       => { optional => 1, default => 'localhost' },
@@ -54,14 +39,14 @@ sub connect {
     my $frame;
     my $header = {};
 
-    $header->{'login'}    = $p{'-login'}    if (defined($p{'-login'}));
-    $header->{'passcode'} = $p{'-passcode'} if (defined($p{'-passcode'}));
+    $header->{'login'}    = $p->{'login'}    if (defined($p->{'login'}));
+    $header->{'passcode'} = $p->{'passcode'} if (defined($p->{'passcode'}));
 
     if ($self->target > 1.0) {
 
-        $header->{'host'}           = $p{'-host'};
-        $header->{'heart-beat'}     = $p{'-heart_beat'};
-        $header->{'accept-version'} = $p{'-acceptable'};
+        $header->{'host'}           = $p->{'host'};
+        $header->{'heart-beat'}     = $p->{'heart_beat'};
+        $header->{'accept-version'} = $p->{'acceptable'};
 
     }
 
@@ -79,7 +64,7 @@ sub connect {
 sub stomp {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -login      => { optional => 1, default => undef },
         -passcode   => { optional => 1, default => undef },
         -host       => { optional => 1, default => 'localhost' },
@@ -107,14 +92,14 @@ sub stomp {
 
     }
 
-    $header->{'login'}    = $p{'-login'}    if (defined($p{'-login'}));
-    $header->{'passcode'} = $p{'-passcode'} if (defined($p{'-passcode'}));
+    $header->{'login'}    = $p->{'login'}    if (defined($p->{'login'}));
+    $header->{'passcode'} = $p->{'passcode'} if (defined($p->{'passcode'}));
 
     if ($self->target > 1.0) {
 
-        $header->{'host'}           = $p{'-host'};
-        $header->{'heart-beat'}     = $p{'-heart_beat'};
-        $header->{'accept-version'} = $p{'-acceptable'};
+        $header->{'host'}           = $p->{'host'};
+        $header->{'heart-beat'}     = $p->{'heart_beat'};
+        $header->{'accept-version'} = $p->{'acceptable'};
 
     }
 
@@ -132,7 +117,7 @@ sub stomp {
 sub subscribe {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -destination  => 1,
         -id           => { optional => 1, default => undef },
         -receipt      => { optional => 1, default => undef },
@@ -142,13 +127,13 @@ sub subscribe {
     my $frame;
     my $header = {};
 
-    $header->{'ack'}         = $p{'-ack'};
-    $header->{'destination'} = $p{'-destination'};
-    $header->{'receipt'}     = $p{'-receipt'} if (defined($p{'-receipt'}));
+    $header->{'ack'}         = $p->{'ack'};
+    $header->{'destination'} = $p->{'destination'};
+    $header->{'receipt'}     = $p->{'receipt'} if (defined($p->{'receipt'}));
 
     if (defined($p{'-id'})) {
 
-        $header->{'id'} = $p{'-id'};
+        $header->{'id'} = $p->{'id'};
 
     } else {
 
@@ -181,7 +166,7 @@ sub subscribe {
 sub unsubscribe {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -id           => { optional => 1, default => undef },
         -destination  => { optional => 1, default => undef },
         -receipt      => { optional => 1, default => undef },
@@ -190,23 +175,23 @@ sub unsubscribe {
     my $frame;
     my $header = {};
 
-    $header->{'receipt'} = $p{'-receipt'} if (defined($p{'-receipt'}));
+    $header->{'receipt'} = $p->{'receipt'} if (defined($p->{'receipt'}));
 
     # v1.0 should have either a destination and/or id header
     # v1.1 and greater may have a destination header
 
-    if (defined($p{'-destination'}) && defined($p{'-id'})) {
+    if (defined($p->{'destination'}) && defined($p->{'id'})) {
 
-        $header->{'id'}          = $p{'-id'};
-        $header->{'destination'} = $p{'-destination'};
+        $header->{'id'}          = $p->{'id'};
+        $header->{'destination'} = $p->{'destination'};
 
-    } elsif (defined($p{'-destination'})) {
+    } elsif (defined($p->{'destination'})) {
 
-        $header->{'destination'} = $p{'-destination'};
+        $header->{'destination'} = $p->{'destination'};
 
-    } elsif (defined($p{'-id'})) {
+    } elsif (defined($p->{'id'})) {
 
-        $header->{'id'} = $p{'-id'};
+        $header->{'id'} = $p->{'id'};
 
     } else {
 
@@ -248,7 +233,7 @@ sub unsubscribe {
 sub begin {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -transaction => 1,
         -receipt     => { optional => 1, default => undef },
     });
@@ -256,8 +241,8 @@ sub begin {
     my $frame;
     my $header = {};
 
-    $header->{'transaction'} = $p{'-transaction'};
-    $header->{'receipt'}     = $p{'-receipt'} if (defined($p{'-receipt'}));
+    $header->{'transaction'} = $p->{'transaction'};
+    $header->{'receipt'}     = $p->{'receipt'} if (defined($p->{'receipt'}));
 
     $frame = XAS::Lib::Stomp::Frame->new(
         -target  => $self->target,
@@ -273,7 +258,7 @@ sub begin {
 sub commit {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -transaction => 1,
         -receipt     => { optional => 1, default => undef },
     });
@@ -281,8 +266,8 @@ sub commit {
     my $frame;
     my $header = {};
 
-    $header->{'transaction'} = $p{'-transaction'};
-    $header->{'receipt'}     = $p{'-receipt'} if (defined($p{'-receipt'}));
+    $header->{'transaction'} = $p->{'transaction'};
+    $header->{'receipt'}     = $p->{'receipt'} if (defined($p->{'receipt'}));
 
     $frame = XAS::Lib::Stomp::Frame->new(
         -target  => $self->target,
@@ -298,7 +283,7 @@ sub commit {
 sub abort {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -transaction => 1,
         -receipt     => { optional => 1, default => undef },
     });
@@ -306,8 +291,8 @@ sub abort {
     my $frame;
     my $header = {};
 
-    $header->{'transaction'} = $p{'-transaction'};
-    $header->{'receipt'}     = $p{'-receipt'} if (defined($p{'-receipt'}));
+    $header->{'transaction'} = $p->{'transaction'};
+    $header->{'receipt'}     = $p->{'receipt'} if (defined($p->{'receipt'}));
 
     $frame = XAS::Lib::Stomp::Frame->new(
         -target  => $self->target,
@@ -323,7 +308,7 @@ sub abort {
 sub ack {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -message_id   => 1,
         -subscription => { optional => 1, default => undef },
         -receipt      => { optional => 1, default => undef },
@@ -333,22 +318,22 @@ sub ack {
     my $frame;
     my $header = {};
 
-    $header->{'receipt'}     = $p{'-receipt'}     if (defined($p{'-receipt'}));
-    $header->{'transaction'} = $p{'-transaction'} if (defined($p{'-transaction'}));
+    $header->{'receipt'}     = $p->{'receipt'}     if (defined($p->{'receipt'}));
+    $header->{'transaction'} = $p->{'transaction'} if (defined($p->{'transaction'}));
 
     if ($self->target < 1.2) {
 
-        $header->{'message-id'} = $p{'-message_id'};
+        $header->{'message-id'} = $p->{'message_id'};
 
     } else {
 
-        $header->{'id'} = $p{'-message_id'};
+        $header->{'id'} = $p->{'message_id'};
 
     }
 
-    if (defined($p{'-subscription'})) {
+    if (defined($p->{'subscription'})) {
 
-        $header->{'subscription'} = $p{'-subscription'};
+        $header->{'subscription'} = $p->{'subscription'};
 
     } else {
 
@@ -378,7 +363,7 @@ sub ack {
 sub nack {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -message_id   => 1,
         -receipt      => { optional => 1, default => undef },
         -subscription => { optional => 1, default => undef },
@@ -388,8 +373,8 @@ sub nack {
     my $frame;
     my $header = {};
 
-    $header->{'receipt'}     = $p{'-receipt'}     if (defined($p{'-receipt'}));
-    $header->{'transaction'} = $p{'-transaction'} if (defined($p{'-transaction'}));
+    $header->{'receipt'}     = $p->{'receipt'}     if (defined($p->{'receipt'}));
+    $header->{'transaction'} = $p->{'transaction'} if (defined($p->{'transaction'}));
 
     if ($self->target == 1.0) {
 
@@ -404,17 +389,17 @@ sub nack {
 
     if ($self->target < 1.2) {
 
-        $header->{'message-id'} = $p{'-message_id'};
+        $header->{'message-id'} = $p->{'message_id'};
 
     } else {
 
-        $header->{'id'} = $p{'-message_id'};
+        $header->{'id'} = $p->{'message_id'};
 
     }
 
-    if (defined($p{'-subscription'})) {
+    if (defined($p->{'subscription'})) {
 
-        $header->{'subscription'} = $p{'-subscription'};
+        $header->{'subscription'} = $p->{'subscription'};
 
     } else {
 
@@ -444,14 +429,14 @@ sub nack {
 sub disconnect {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -receipt => { optional => 1, default => undef }
     });
 
     my $frame;
     my $header = {};
 
-    $header->{'receipt'} = $p{'-receipt'} if (defined($p{'-receipt'}));
+    $header->{'receipt'} = $p->{'receipt'} if (defined($p->{'receipt'}));
 
     $frame = XAS::Lib::Stomp::Frame->new(
         -target  => $self->target,
@@ -467,7 +452,7 @@ sub disconnect {
 sub send {
     my $self = shift;
 
-    my %p = validate(@_, {
+    my $p = $self->validate_params(\@_, {
         -destination => 1,
         -message     => 1,
         -receipt     => { optional => 1, default => undef },
@@ -479,17 +464,17 @@ sub send {
 
     my $frame;
     my $header = {};
-    my $body = $p{'-message'};
+    my $body = $p->{'message'};
 
-    $header->{'destination'} = $p{'-destination'};
-    $header->{'receipt'}     = $p{'-receipt'}     if (defined($p{'-receipt'}));
-    $header->{'persistent'}  = $p{'-persistent'}  if (defined($p{'-presistent'}));
-    $header->{'transaction'} = $p{'-transaction'} if (defined($p{'-transaction'}));
-    $header->{'content-length'} = defined($p{'-length'}) ? $p{'-length'} : length($body);
+    $header->{'destination'} = $p->{'destination'};
+    $header->{'receipt'}     = $p->{'receipt'}     if (defined($p->{'receipt'}));
+    $header->{'persistent'}  = $p->{'persistent'}  if (defined($p->{'presistent'}));
+    $header->{'transaction'} = $p->{'transaction'} if (defined($p->{'transaction'}));
+    $header->{'content-length'} = defined($p->{'length'}) ? $p->{'length'} : length($body);
 
     if ($self->target > 1.0) {
 
-        $header->{'content-type'} = $p{'-type'};
+        $header->{'content-type'} = $p->{'type'};
 
     }
 
@@ -573,7 +558,7 @@ This module uses XAS::Lib::Stomp::Frame to create STOMP frames.
 =head1 DESCRIPTION
 
 This module is an easy way to create STOMP frames without worrying about
-the various differances between the protocol versions.
+the various differences between the protocol versions.
 
 =head1 METHODS
 
@@ -633,7 +618,7 @@ STOMP v1.1 and later clients. The default is '1.0,1.1,1.2'.
 =head2 stomp
 
 This method creates a "STOMP" frame, this works the same as connect(), but 
-only works for STOMP v1.1 and later tagets. Please see the documentation for 
+only works for STOMP v1.1 and later targets. Please see the documentation for 
 connect().
 
 =head2 disconnect
@@ -671,7 +656,7 @@ has no meaning for STOMP v1.0 servers.
 
 =item B<-ack>
 
-The type of acknowledgement you would like to recieve when messages are sent
+The type of acknowledgement you would like to receive when messages are sent
 to a queue. It defaults to 'auto'. It understands 'auto', 'client' and 
 'client-individual'. Please refer to the STOMP protocol reference for 
 what this means.
@@ -698,7 +683,7 @@ on v1.1 and later targets.
 
 =item B<-subscription>
 
-The id of the subscribtion, this should be the same as the one used 
+The id of the subscription, this should be the same as the one used 
 with subscribe(). This is optional on STOMP v1.0 servers and mandatory
 on v1.1 and later targets.
 
@@ -780,7 +765,7 @@ The message to be sent. No attempt is made to serializes the message.
 
 =item B<-transaction>
 
-An optional tranasction number. This should be the same as for begin().
+An optional transaction number. This should be the same as for begin().
 
 =item B<-length>
 
@@ -794,7 +779,7 @@ will be used. This only has meaning for STOMP v1.1 and later targets.
 
 =item B<-persistent>
 
-An optional header for indicating that this frame should be 'presisted' by
+An optional header for indicating that this frame should be 'persisted' by
 the server. What this means, is highly server specific.
 
 =item B<-receipt>
@@ -834,7 +819,7 @@ An optional receipt that will be returned by the server.
 
 This method creates a "NACK" frame. It notifies the server that the message 
 was rejected. It has meaning on STOMP v1.1 and later targets. This method
-takes the following paramters:
+takes the following parameters:
 
 =over 4
 
@@ -866,9 +851,9 @@ later targets.
 
 =over 4
 
-=item Net::Stomp
+=item L<Net::Stomp|https://metacpan.org/pod/Net::Stomp>
 
-=item Net::Stomp::Frame
+=item L<Net::Stomp::Frame|https://metacpan.org/pod/Net::Stomp::Frame>
 
 =item L<XAS|XAS>
 
@@ -882,10 +867,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2013 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

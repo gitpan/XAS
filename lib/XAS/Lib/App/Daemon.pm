@@ -1,45 +1,23 @@
 package XAS::Lib::App::Daemon;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Try::Tiny;
 use File::Pid;
 use Pod::Usage;
 use Hash::Merge;
-use XAS::System;
 use Getopt::Long;
 use POSIX 'setsid';
-use Params::Validate ':all';
 
 use XAS::Class
+  debug     => 0,
   version   => $VERSION,
   import    => 'class CLASS',
   base      => 'XAS::Lib::App',
   utils     => ':process',
   constants => 'TRUE FALSE',
-  accessors => 'logfile pidfile daemon',
-  messages => {
-    'runerr' => '%s is already running: %d',
-    'piderr' => '%s has left a pid file behind, exiting',
-    'wrterr' => 'unable to create pid file %s',
-  },
-  vars => {
-    PARAMS => {
-      -throws   => { optional => 1, default => 'changeme' },
-      -options  => { optional => 1, default => [] },
-      -facility => { optional => 1, default => 'systems' },
-      -priority => { optional => 1, default => 'high' },
-    }
-  }
+  accessors => 'daemon',
 ;
-
-Params::Validate::validation_options(
-    on_fail => sub {
-        my $params = shift;
-        my $class  = __PACKAGE__;
-        XAS::Base::validation_exception($params, $class);
-    }
-);
 
 # ----------------------------------------------------------------------
 # Public Methods
@@ -55,18 +33,6 @@ sub define_signals {
 
 }
 
-sub define_logging {
-    my $self = shift;
-
-    $self->{logger} = XAS::System->module(
-        logger => {
-            -filename => $self->logfile,
-            -debug    => $self->xdebug,
-        }
-    );
-
-}
-
 sub define_pidfile {
     my $self = shift;
 
@@ -74,18 +40,20 @@ sub define_pidfile {
 
     # create a pid file, use it as a semaphore lock file
 
-    $self->log('debug', "entering define_pidfile()");
-    $self->log('debug', "pid file = " . $self->pidfile);
+    $self->log->debug("entering define_pidfile()");
+    $self->log->debug("pid file = " . $self->env->pidfile);
 
     try {
 
-        $self->{pid} = File::Pid->new({file => $self->pidfile});
-        if ((my $num = $self->pid->running()) || (-e $self->pidfile)){
+        $self->{pid} = File::Pid->new({file => $self->env->pidfile->path});
+
+        if ((my $num = $self->pid->running()) || 
+            ($self->env->pidfile->exists)) {
 
             if ($num) {
 
                 $self->throw_msg(
-                    'xas.lib.app.daemon.pidfile',
+                    'xas.lib.app.daemon.pidfile.runerr',
                     'runerr',
                     $script, $num
                 );
@@ -93,7 +61,7 @@ sub define_pidfile {
             } else {
 
                 $self->throw_msg(
-                    'xas.lib.app.daemon.pidfile',
+                    'xas.lib.app.daemon.pidfile.piderr',
                     'piderr',
                     $script
                 );
@@ -104,7 +72,7 @@ sub define_pidfile {
 
         $self->pid->write() or 
           $self->throw_msg(
-              'xas.lib.app.daemon.pidfile',
+              'xas.lib.app.daemon.pidfile.writerr',
               'wrterr',
               $self->pid->file
           );
@@ -119,7 +87,7 @@ sub define_pidfile {
 
     };
 
-    $self->log('debug', "leaving define_pidfile()");
+    $self->log->debug("leaving define_pidfile()");
 
 }
 
@@ -129,7 +97,7 @@ sub define_daemon {
     # become a daemon...
     # interesting, "daemonize() if ($self->daemon);" doesn't work as expected
 
-    $self->log('debug', "before pid = " . $$);
+    $self->log->debug("before pid = " . $$);
 
     if ($self->daemon) {
 
@@ -137,7 +105,7 @@ sub define_daemon {
 
     }
 
-    $self->log('debug', "after pid = " . $$);
+    $self->log->debug("after pid = " . $$);
 
 }
 
@@ -156,27 +124,26 @@ sub run {
 # Private Methods
 # ----------------------------------------------------------------------
 
-sub _class_options {
+sub _default_options {
     my $self = shift;
 
-    my $version = $self->CLASS->VERSION;
-    my $script  = $self->class->any_var('SCRIPT');
+    my $options = $self->SUPER::_default_options();
 
-    $self->{pidfile}  = $self->env->pidfile;
-    $self->{logfile}  = $self->env->logfile;
-    $self->{daemon}   = FALSE;
-    $self->{alerts}   = 1;
+    $self->{daemon} = FALSE;
 
-    return {
-        'logfile=s' => \$self->{logfile},
-        'pidfile=s' => \$self->{pidfile},
-        'daemon'    => \$self->{daemon},
-        'debug'     => \$self->{xdebug},
-        'alerts!'   => \$self->{alerts},
-        'help|h|?'  => sub { pod2usage(-verbose => 0, -exitstatus => 0); },
-        'manual'    => sub { pod2usage(-verbose => 2, -exitstatus => 0); },
-        'version'   => sub { printf("%s - v%s\n", $script, $version); exit 0; }
+    $options->{'daemon'} = \$self->{daemon};
+  
+    $options->{'cfgfile=s'} = sub { 
+        my $cfgfile = File($_[1]);
+        $self->env->cfgfile($cfgfile);
     };
+
+    $options->{'pidfile=s'} = sub { 
+        my $pidfile = File($_[1]); 
+        $self->env->pidfile($pidfile);
+    };
+
+    return $options;
 
 }
 
@@ -198,21 +165,22 @@ XAS::Lib::App::Daemon - The base class to write daemons within the XAS environme
 
 =head1 DESCRIPTION
 
-This module defines a base class for writing daemons. It inherits from
-L<XAS::Lib::App|XAS::Lib::App>. Please see that module for additional 
+This module defines an operating environment for daemons. A daemon is a 
+Unix background process without a controlling terminal. Windows really
+doesn't have a concept for this behavior. For running background jobs
+on Windows please see L<XAS::Lib::App::Services|XAS::Lib::App::Services>. 
+
+This module is also single threaded, it doesn't use POE to provide an 
+async environment. If you need that, the see the above module. This inherits 
+from L<XAS::Lib::App|XAS::Lib::App>. Please see that module for additional 
 documentation.
 
 =head1 METHODS
 
-=head2 define_logging
-
-This method sets up the logger. By default, this file is named 
-xas/var/log/<$0>.log. This can be overridden by the --logfile option.
-
 =head2 define_pidfile
 
-This methid sets up the pid file for the process. By default, this file
-is named  xas/var/run/<$0>.pid. This can be overridded by the --pidfile option.
+This method sets up the pid file for the process. By default, this file
+is named $XAS_RUN/<$0>.pid. This can be overridden by the --pidfile option.
 
 =head2 define_signals
 
@@ -223,25 +191,13 @@ TERM, HUP and QUIT signals.
 
 This method will cause the process to become a daemon.
 
-=head1 ACCESSORS
-
-The following accessors are defined.
-
-=head2 logfile
-
-This returns the currently defined log file. 
-
-=head2 pidfile
-
-This returns the currently defined pid file.
-
 =head1 OPTIONS
 
 This module handles these additional options.
 
-=head2 --logfile
+=head2 --cfgfile
 
-This defines a log file for logging information.
+This defines an optional configuration file.
 
 =head2 --pidfile
 
@@ -265,10 +221,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

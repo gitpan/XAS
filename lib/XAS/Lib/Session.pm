@@ -1,90 +1,89 @@
 package XAS::Lib::Session;
 
-our $VERSION = '0.04';
+our $VERSION = '0.03';
 
 use POE;
-use Params::Validate;
 
 use XAS::Class
+  debug     => 0,
   version   => $VERSION,
   base      => 'XAS::Base',
   utils     => 'weaken',
   accessors => 'session',
-  messages => {
-      noalias    => "can not set session alias %s",
-  },
   vars => {
-      PARAMS => {
-          -logger => { optional => 1, default => 'logger' },
-          -alias  => { optional => 1, default => 'session' },
-      }
+    PARAMS => {
+      -alias  => { optional => 1, default => 'session' },
+    }
   }
 ;
-
-Params::Validate::validation_options(
-    on_fail => sub {
-        my $params = shift;
-        my $class  = __PACKAGE__;
-        XAS::Base::validation_exception($params, $class);
-    }
-);
 
 # ----------------------------------------------------------------------
 # Public Events
 # ----------------------------------------------------------------------
 
-sub startup {
-    my ($kernel, $self) = @_[KERNEL,OBJECT];
-
-}
-
 # ----------------------------------------------------------------------
 # Public Methods
 # ----------------------------------------------------------------------
 
-sub cleanup {
-    my ($self, $kernel, $session) = @_;
-
-}
-
-sub interrupt {
-    my ($self, $kernel, $session, $signal) = @_;
-
-}
-
-sub initialize {
-    my ($self, $kernel, $session) = @_;
-
-}
-
-sub reload {
-    my ($self, $kernel, $session) = @_;
-
-    $kernel->sig_handled();
-
-}
-
-sub stop {
-    my ($self, $kernel, $session) = @_;
-
-}
-
-sub log {
+sub session_initialize {
     my $self = shift;
-    my ($level, $message) = validate_pos(@_,
-        { regex => qr/info|warn|error|fatal|debug/i },
-        1
-    );
 
-    my $logger = $self->logger;
-
-    $poe_kernel->post($logger, $level, $message);
+    $poe_kernel->sig(HUP  => 'session_interrupt');
+    $poe_kernel->sig(INT  => 'session_interrupt');
+    $poe_kernel->sig(TERM => 'session_interrupt');
+    $poe_kernel->sig(QUIT => 'session_interrupt');
 
 }
 
-# ----------------------------------------------------------------------
-# Public Accessors
-# ----------------------------------------------------------------------
+sub session_startup {
+    my $self = shift;
+
+}
+
+sub session_shutdown {
+    my $self = shift;
+
+}
+
+sub session_reload {
+    my $self = shift;
+
+    $poe_kernel->sig_handled();
+
+}
+
+sub session_interrupt {
+    my $self   = shift;
+    my $signal = shift;
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: session_interrupt()");
+    $self->log->warn_msg('signaled', $alias, $signal);
+
+    if ($signal eq 'HUP') {
+
+        $self->session_reload();
+
+    } else {
+
+        $self->session_shutdown();
+
+    }
+
+}
+
+sub session_stop {
+    my $self = shift;
+
+}
+
+sub run {
+    my $self = shift;
+
+    $poe_kernel->run();
+
+}
 
 # ----------------------------------------------------------------------
 # Private Methods
@@ -92,8 +91,16 @@ sub log {
 
 sub init {
     my $class = shift;
-    
+
+    # initialize POE, this removes an error message if a failure happens later
+
+    $poe_kernel->run();
+
+    # walk the chain
+
     my $self = $class->SUPER::init(@_);
+
+    # set up the session
 
     $self->{session} = POE::Session->create(
         object_states => [
@@ -101,11 +108,11 @@ sub init {
                 _start            => '_session_start',
                 _stop             => '_session_stop',
                 session_init      => '_session_init',
-                session_interrupt => '_session_interrupt',
                 session_reload    => '_session_reload',
-                shutdown          => '_session_shutdown',
+                session_startup   => '_session_startup',
+                session_shutdown  => '_session_shutdown',
+                session_interrupt => '_session_interrupt',
             },
-            $self => [qw( startup )]
         ]
     );
 
@@ -120,91 +127,93 @@ sub init {
 # ----------------------------------------------------------------------
 
 sub _session_start {
-    my ($kernel, $self, $session) = @_[KERNEL,OBJECT,SESSION];
+    my ($self) = $_[OBJECT];
 
     my $alias = $self->alias;
 
-    $self->log('debug', "$alias: _session_start()");
+    $self->log->debug("$alias: _session_start()");
 
-    if ((my $rc = $kernel->alias_set($alias)) > 0) {
+    if ((my $rc = $poe_kernel->alias_set($alias)) > 0) {
 
         $self->throw_msg(
-            'xas.session._session_start.noalias', 
-            'noalias', 
+            'xas.session._session_start.noalias',
+            'noalias',
             $alias
         );
 
     }
 
-    $kernel->sig(HUP  => 'session_interrupt');
-    $kernel->sig(INT  => 'session_interrupt');
-    $kernel->sig(TERM => 'session_interrupt');
-    $kernel->sig(QUIT => 'session_interrupt');
-    $kernel->sig(ABRT => 'session_interrupt');
-
-    $kernel->yield('session_init');
-
-}
-
-sub _session_stop {
-    my ($kernel, $self, $session) = @_[KERNEL,OBJECT,SESSION];
-
-    $self->stop($kernel, $session);
-
-    $kernel->alias_remove($self->alias);
-
-}
-
-sub _session_shutdown {
-    my ($kernel, $self, $session) = @_[KERNEL,OBJECT,SESSION];
-
-    my $alias = $self->alias;
-
-    $self->log('debug', "$alias: _session_shutdown()");
-
-    $self->cleanup($kernel, $session);
-
-}
-
-sub _session_reload {
-    my ($kernel, $self, $session) = @_[KERNEL,OBJECT,SESSION];
-
-    my $alias = $self->alias;
-
-    $self->log('debug', "$alias: _session_reload()");
-
-    $self->reload($kernel, $session);
+    $poe_kernel->post($alias, 'session_init');
 
 }
 
 sub _session_init {
-    my ($kernel, $self, $session) = @_[KERNEL,OBJECT,SESSION];
+    my ($self) = $_[OBJECT];
 
     my $alias = $self->alias;
 
-    $self->log('debug', "$alias: _session_init()");
-    $self->initialize($kernel, $session);
+    $self->log->debug("$alias: _session_init()");
 
-    $kernel->yield('startup');
+    $self->session_initialize();
+
+    $poe_kernel->post($alias, 'session_startup');
+
+}
+
+sub _session_startup {
+    my ($self) = $_[OBJECT];
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: _session_startup()");
+
+    $self->session_startup();
+
+}
+
+sub _session_shutdown {
+    my ($self) = $_[OBJECT];
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: _session_shutdown()");
+
+    $self->session_shutdown();
+
+}
+
+sub _session_reload {
+    my ($self) = $_[OBJECT];
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: _session_reload()");
+
+    $self->session_reload();
+
+}
+
+sub _session_stop {
+    my ($self) = $_[OBJECT];
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: _session_stop()");
+
+    $self->session_stop();
+
+    $poe_kernel->alias_remove($self->alias);
 
 }
 
 sub _session_interrupt {
-    my ($kernel, $self, $session, $signal) = @_[KERNEL,OBJECT,SESSION,ARG0];
+    my ($self, $signal) = @_[OBJECT,ARG0];
 
     my $alias = $self->alias;
 
-    $self->log('debug', "$alias: _session_interrupt()");
+    $self->log->debug("$alias: _session_interrupt()");
 
-    if ($signal eq 'HUP') {
-
-        $kernel->yield('session_reload');
-
-    } else {
-
-        $self->interrupt($kernel, $session, $signal);
-
-    }
+    $self->session_interrupt($signal);
 
 }
 
@@ -219,146 +228,53 @@ XAS::Lib::Session - The base class for all POE Sessions.
 =head1 SYNOPSIS
 
  my $session = XAS::Lib::Session->new(
-     -alias  => 'name',
-     -logger => 'logger'
+     -alias => 'name',
  );
 
 =head1 DESCRIPTION
 
 This module provides an object based POE session. This object will perform
 the necessary actions for the lifetime of the session. This includes handling
-signals. The following signals INT, TERM, QUIT will trigger the 'shutdown' 
-event which invokes the cleanup() method. The HUP signal will invoke the 
-reload() method.
+signals. The following signals INT, TERM, QUIT will trigger the 'shutdown'
+event which invokes the session_cleanup() method. The HUP signal will invoke 
+the session_reload() method. This module inherits from XAS::Base.
 
 =head1 METHODS
 
-=head2 initialize($kernel, $session)
+=head2 session_initialize
 
-This is where the session should do whatever initialization it needs. This 
-initialization may include defining additional events. 
+This is where the session should do whatever initialization it needs. This
+initialization may include defining additional events.
 
-=over 4
-
-=item B<$kernel>
-
-A handle to the POE kernel.
-
-=item B<$session>
-
-A handle to the current POE session.
-
-=back
-
-=head2 cleanup($kernel, $session)
+=head2 session_cleanup
 
 This method should perform cleanup actions for the session. This is triggered
 by a "shutdown" event.
 
-=over 4
-
-=item B<$kernel>
-
-A handle to the POE kernel.
-
-=item B<$session>
-
-A handle to the current POE session.
-
-=back
-
-=head2 reload($kernel, $session)
+=head2 session_reload
 
 This method should perform reload actions for the session. By default it
 calls $kernel->sig_handled() which terminates further handling of the HUP
-signal. 
+signal.
 
-=over 4
-
-=item B<$kernel>
-
-A handle to the POE kernel.
-
-=item B<$session>
-
-A handle to the current POE session.
-
-=back
-
-=head2 stop($kernel, $session)
+=head2 session_stop
 
 This method should perform stop actions for the session. This is triggered
 by a "_stop" event.
-
-=over 4
-
-=item B<$kernel>
-
-A handle to the POE kernel.
-
-=item B<$session>
-
-A handle to the current POE session.
-
-=back
-
-=head2 config($item)
-
-This method will return a value from the configuration items for this object. 
-It is passed one parameter, the name of the config item.
-
-=over 4
-
-=item B<$item>
-
-Return the value for this item from the config.
-
-Example:
-
-    my $item = $self->config('Item');
-
-=back
-
-=head2 log($level, $message)
-
-This method provides a simple logger. It should be overridden.
-
-=over
-
-=item B<$level>
-
-A log level that is compatiable with your logger.
-
-=item B<$message>
-
-The message to write in the log.
-
-=back
 
 =head1 PUBLIC EVENTS
 
 The following public events are defined for the session.
 
-=head2 startup($kernel, $self)
+=head2 session_startup
 
 This event should start whatever processing the session will do. It is passed
 two parameters:
 
-=over 4
+=head2 session_shutdown
 
-=item B<$kernel>
-
-A handle to the POE kernel.
-
-=item B<$self>
-
-A handle to the current self.
-
-=back
-
-=head2 shutdown
-
-When you send this event to the session, it will invoke the cleanup() method.
+When you send this event to the session, it will invoke the session_cleanup() 
+method.
 
 =head1 PRIVATE EVENTS
 
@@ -385,10 +301,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.8.5 or,
+it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

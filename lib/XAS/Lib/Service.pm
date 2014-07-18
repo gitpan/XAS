@@ -1,83 +1,147 @@
 package XAS::Lib::Service;
 
-our $VERSION = '0.01';
+our $VERSION = '0.03';
 
-use Params::Validate;
+use POE;
 
-use WPM::Class
-  base     => 'XAS::Lib::Session',
-  version  => $VERSION,
-  messages => {
-    noservice => 'unable to start service; reason: %s',
-    paused    => 'the service is already paused',
-    unpaused  => 'the service is not paused',
-  },
+use XAS::Class
+  debug   => 0,
+  version => $VERSION,
+  base    => 'XAS::Lib::Session',
   vars => {
     PARAMS => {
-      -poll_interval     => { optional => 1, default => 2 },
-      -shutdown_interval => { optional => 1, default => 25 },
+      -alias => { optional => 1, default => 'service' }
     }
   }
 ;
-
-Params::Validate::validation_options(
-    on_fail => sub {
-        my $params = shift;
-        my $class  = __PACKAGE__;
-        XAS::Base::validation_exception($params, $class);
-    }
-);
-
-# ----------------------------------------------------------------------
-# Public Methods
-# ----------------------------------------------------------------------
-
-sub service_startup {
-    my $self = shift;
-
-    $self->log('info', 'service startup');
-
-}
-
-sub service_shutdown {
-    my $self = shift;
-
-    $self->log('info', 'service shutdown');
-
-}
-
-sub service_running {
-    my $self = shift;
-
-    $self->log('info', 'service running');
-
-}
-
-sub service_paused {
-    my $self = shift;
-
-    $self->log('info', 'service paused');
-
-}
-
-sub service_unpaused {
-    my $self = shift;
-
-    $self->log('info', 'service continue');
-
-}
 
 # ----------------------------------------------------------------------
 # Public Events
 # ----------------------------------------------------------------------
 
 # ----------------------------------------------------------------------
-# Overridden Methods - semi public
+# Public Methods
+# ----------------------------------------------------------------------
+
+sub session_initialize {
+    my $self = shift;
+
+    $poe_kernel->state('session_idle',   $self, '_session_idle');
+    $poe_kernel->state('session_pause',  $self, '_session_pause');
+    $poe_kernel->state('session_resume', $self, '_session_resume');
+    $poe_kernel->state('session_status', $self, '_session_status');
+
+    $poe_kernel->sig('HUP', 'session_interrupt');
+
+}
+
+sub session_idle {
+    my $self = shift;
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: session_idle()");
+
+}
+
+sub session_pause {
+    my $self = shift;
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: session_pause()");
+
+}
+
+sub session_resume {
+    my $self = shift;
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: session_resume()");
+
+}
+
+sub session_status {
+    my $self   = shift;
+    my $status = shift;
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: session_status()");
+
+    $self->{'__status'} = $status if (defined($status));
+
+    return $self->{'__status'};
+
+}
+
+# ----------------------------------------------------------------------
+# Public Accessors
 # ----------------------------------------------------------------------
 
 # ----------------------------------------------------------------------
 # Private Methods
 # ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# Private Events
+# ----------------------------------------------------------------------
+
+sub _session_init {
+    my ($self) = $_[OBJECT];
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: _session_init()");
+
+    $self->session_initialize();
+
+}
+
+sub _session_idle {
+    my ($self) = $_[OBJECT];
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: session_idle()");
+
+    $self->session_idle();
+
+}
+
+sub _session_pause {
+    my ($self) = $_[OBJECT];
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: session_pause()");
+
+    $self->session_pause();
+
+}
+
+sub _session_resume {
+    my ($self) = $_[OBJECT];
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: _session_resume()");
+
+    $self->session_resume();
+
+}
+
+sub _session_status {
+    my ($self, $status) = @_[OBJECT, ARG0];
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: _session_status()");
+
+    $self->session_status($status);
+
+}
 
 1;
 
@@ -85,65 +149,69 @@ __END__
 
 =head1 NAME
 
-XAS::Lib::Service - A base class for Services
+XAS::Lib::Service - The base class for all POE Sessions.
 
 =head1 SYNOPSIS
 
- use XAS::Lib::Service;
-
- my $sevice = XAS::Lib::Service->new(
-    -logger => $log,
+ my $session = XAS::Lib::Session->new(
+     -alias => 'name',
  );
 
 =head1 DESCRIPTION
 
-This module defines an interface to services. A service is a managed 
-background process.
+This module provides an object based POE session. This object will perform
+the necessary actions for the lifetime of the session. This includes handling
+signals. The following signals INT, TERM, QUIT will trigger the 'shutdown'
+event which invokes the session_cleanup() method. The HUP signal will invoke 
+the session_reload() method. This module inherits from XAS::Base.
 
 =head1 METHODS
 
-=head2 new()
+=head2 session_initialize
 
-This method is used to initialize the service. 
+This is where the session should do whatever initialization it needs. This
+initialization may include defining additional events.
 
-=over 4
+=head2 session_shutdown
 
-=item B<--poll_interval>
+This method should perform cleanup actions for the session. This is triggered
+by a "shutdown" event.
 
-The number of seconds between polls. Defaults to 5.
+=head2 session_reload
 
-=item B<--shutdown_interval>
+This method should perform reload actions for the session. By default it
+calls $kernel->sig_handled() which terminates further handling of the HUP
+signal.
 
-The number of seconds before shutdown can happen. Defaults to 25. 
+=head2 session_stop
 
-=back
+This method should perform stop actions for the session. This is triggered
+by a "_stop" event.
 
-It also use parameters from WPM::Lib::Session.
+=head1 PUBLIC EVENTS
 
-=head2 service_startup()
+The following public events are defined for the session.
 
-This method should be overridden, it is called when the service is
-starting up.
+=head2 session_startup
 
-=head2 service_shutdown()
+This event should start whatever processing the session will do. It is passed
+two parameters:
 
-This method should be overridden, it is called when the service has
-been stopped or when the system is shutting down.
+=head2 session_shutdown
 
-=head2 service_running()
+When you send this event to the session, it will invoke the session_cleanup() 
+method.
 
-This method should be overridden, it is called every B<--poll_interval>.
-This is where the work of the service can be done.
+=head1 PRIVATE EVENTS
 
-=head2 service_paused()
+The following events are used internally:
 
-This method should be overridden, it is called when the service has been
-paused.
+ session_init
+ session_interrupt
+ session_reload
+ shutdown
 
-=head2 service_unpaused()
-
-This method should be overridden, it is called when the service has been
-resumed.
+They should only be used with caution.
 
 =head1 SEE ALSO
 
@@ -159,10 +227,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2013 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

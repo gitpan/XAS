@@ -1,37 +1,29 @@
 package XAS::Lib::App;
 
-our $VERSION = '0.02';
+our $VERSION = '0.04';
 
 use Try::Tiny;
 use Pod::Usage;
 use Hash::Merge;
-use XAS::System;
 use Getopt::Long;
-use Params::Validate ':all';
 
 use XAS::Class
-  version   => $VERSION,
-  base      => 'XAS::Base',
-  import    => 'class CLASS',
-  accessors => 'alert alerts pid',
-  mixin     => 'XAS::Lib::Mixin::Handlers',
+  debug   => 0,
+  version => $VERSION,
+  base    => 'XAS::Base',
+  mixin   => 'XAS::Lib::Mixins::Handlers',
+  import  => 'CLASS',
+  utils   => 'dotid',
   vars => {
     PARAMS => {
       -throws   => { optional => 1, default => 'changeme' },
-      -options  => { optional => 1, default => [] },
       -facility => { optional => 1, default => 'systems' },
-      -priority => { optional => 1, default => 'high' },
+      -priority => { optional => 1, default => 'low' },
     }
   }
 ;
 
-Params::Validate::validation_options(
-    on_fail => sub {
-        my $params = shift;
-        my $class  = __PACKAGE__;
-        XAS::Base::validation_exception($params, $class);
-    }
-);
+#use Data::Dumper;
 
 # ----------------------------------------------------------------------
 # Public Methods
@@ -40,7 +32,7 @@ Params::Validate::validation_options(
 sub signal_handler {
     my $signal = shift;
 
-    my $ex = WPM::Exception->new(
+    my $ex = XAS::Exception->new(
         type => 'xas.lib.app.signal_handler',
         info => 'process interrupted by signal ' . $signal
     );
@@ -54,17 +46,6 @@ sub define_signals {
 
     $SIG{'INT'}  = \&signal_handler;
     $SIG{'QUIT'} = \&signal_handler;
-
-}
-
-sub define_logging {
-    my $self = shift;
-
-    $self->{logger} = XAS::System->module(
-        logger => {
-            -debug => $self->xdebug,
-        }
-    );
 
 }
 
@@ -85,6 +66,10 @@ sub run {
 
     try {
 
+        $self->define_signals();
+        $self->define_daemon();
+        $self->define_pidfile();
+
         $self->main();
 
     } catch {
@@ -99,6 +84,20 @@ sub run {
 
 }
 
+sub main {
+    my $self = shift;
+
+    $self->log->warn('You need to override main()');
+
+}
+
+sub options {
+    my $self = shift;
+
+    return {};
+
+}
+
 # ----------------------------------------------------------------------
 # Private Methods
 # ----------------------------------------------------------------------
@@ -106,80 +105,47 @@ sub run {
 sub init {
     my $class = shift;
 
-    my $defaults;
     my $self = $class->SUPER::init(@_);
 
-    class->throws($self->throws);
+    $self->class->throws($self->throws);
 
-    $self->_setup();
-    $defaults = $self->_class_options();
-    $self->_parse_cmdline($defaults, $self->options);
+    my $options = $self->options();
+    my $defaults = $self->_default_options();
 
-    $self->define_signals();
-    $self->define_logging();
-    $self->define_daemon();
-    $self->define_pidfile();
+    $self->_parse_cmdline($defaults, $options);
 
     return $self;
 
 }
 
-sub _setup {
-    my $self = shift;
-
-    # initialize the basic environment
-
-    $self->{alert} = XAS::System->module('alert');
-
-}
-
-sub _class_options {
+sub _default_options {
     my $self = shift;
 
     my $version = $self->CLASS->VERSION;
     my $script  = $self->class->any_var('SCRIPT');
 
-    $self->{alerts} = 1;
-
     return {
-        'debug'    => \$self->{xdebug},
-        'alerts!'  => \$self->{alerts},
-        'help|h|?' => sub { pod2usage(-verbose => 0, -exitstatus => 0); },
-        'manual'   => sub { pod2usage(-verbose => 2, -exitstatus => 0); },
-        'version'  => sub { printf("%s - v%s\n", $script, $version); exit 0; }
+        'logtype=s' => sub { $self->env->logtype($_[1]) },
+        'alerts!'   => sub { $self->alerts->on($_[1]); },
+        'debug'     => sub { $self->debugging(1); },
+        'help|h|?'  => sub { pod2usage(-verbose => 0, -exitstatus => 0); },
+        'manual'    => sub { pod2usage(-verbose => 2, -exitstatus => 0); },
+        'version'   => sub { printf("%s - v%s\n", $script, $version); exit 0; },
+        'logfile=s' => sub {
+            my $logfile = File($_[1]);
+            $self->env->logtype('file');
+            $self->env->logfile($logfile);
+        }
     };
 
 }
 
 sub _parse_cmdline {
-    my ($self, $defaults, $params) = @_;
+    my ($self, $defaults, $optional) = @_;
 
     my $hm = Hash::Merge->new('RIGHT_PRECEDENT');
+    my %options = %{ $hm->merge($defaults, $optional) };
 
-    my %options;
-    my %config;
-
-    foreach my $x (@$params) {
-
-        my ($key, $value) = each(%$x);
-
-        if ($key =~ /^(.*)[|=]/) {
-
-            class->accessors($1);
-            $self->{$1} = $value;
-            $config{$key} = \$self->{$1};
-
-        } else {
-
-            class->accessors($key);
-            $self->{$key} = $value;
-            $config{$key} = \$self->{$key};
-
-        }
-
-    }
-
-    %options = %{ $hm->merge($defaults, \%config) };
     GetOptions(%options) or pod2usage(-verbose => 0, -exitstatus => 1);
 
 }
@@ -202,14 +168,15 @@ XAS::Lib::App - The base class to write procedures within the XAS environment
 
 =head1 DESCRIPTION
 
-This module defines a base class for writing procedures. It provides a
-logger, signal handling, options processing along with a exit handler.
+This module defines a base class for writing procedures. It provides
+signal handling, options processing, along with a exit handler.
 
 =head1 METHODS
 
 =head2 new
 
-This method initilaizes the module. It takes several parameters:
+This method initilaizes the module. It inherits from XAS::Base and takes 
+these additional parameters:
 
 =over 4
 
@@ -217,34 +184,13 @@ This method initilaizes the module. It takes several parameters:
 
 This changes the default error message from "changeme" to something useful.
 
-=item B<-options>
-
-This will parse additional options from the command line. Those options are
-a list of command line options and defaults.
-
-Example 
-
-    my $app = XAS::Lib::App->new(
-       -options => [
-           { 'logfile=s' => 'test.log' }
-       ]
-    );
-
-This will then create an accessor named "logfile" that will return the value, 
-which may be the supplied default or supplied from the command line.
-
 =item B<-facility>
 
 This will change the facility of the alert. The default is 'systems'.
 
 =item B<-priority>
 
-This will change the priority of the alert. The default is 'high'.
-
-=item B<-alerts>
-
-This will toggle wither to send an alert to the XAS Alert System. The
-default is to do so. Values of 'true', 'yes' or 1 will evaluate to TRUE.
+This will change the priority of the alert. The default is 'low'.
 
 =back
 
@@ -277,25 +223,41 @@ When the procedure completes successfully, it will return an exit code of 0.
 
 To change this behavior you would need to override the exit_handler() method.
 
-=head2 define_logging
+=head2 main
 
-This method sets up the logger. By default, this logs to stderr. 
+This is where your main line logic starts.
 
-Example
+=head2 options
 
-    sub define_logging {
+This method sets up additional cli options. Option handling is provided
+by Getopt::Long. To access these options you need to define accessors for
+them.
+
+  Example
+
+    use XAS::Class
+      version   => '0.01',
+      base      => 'XAS::Lib::App',
+      accessors => 'widget'
+    ;
+
+    sub main {
         my $self = shift;
 
-        my $logfile = defined($self->logfile) ? 
-                              $self->logfile : 
-                              $self->env->logfile;
+        $self->log->info('starting up');
+        sleep(60);
+        $self->log->info('shutting down');
 
-        $self->{log} = XAS::System->module(
-            logger => {
-                -filename => $logfile,
-                -debug    => $debug,
+    }
+
+    sub options {
+        my $self = shift;
+
+        return {
+            'widget=s' => sub {
+                $self->{widget} = uc($_[1]);
             }
-        );
+        };
 
     }
 
@@ -314,6 +276,14 @@ Example
 
     }
 
+=head2 define_pidfile
+
+This is an entry point to define a pid file.
+
+=head2 define_daemon
+
+This is an entry point so the procedure can daemonize.
+
 =head2 signal_handler($signal)
 
 This method is a default signal handler. By default it throws an exception. 
@@ -326,34 +296,6 @@ It takes one parameter.
 The signal that was captured.
 
 =back
-
-=head1 ACCESSORS
-
-This module has several accessors that make life easier for you.
-
-=head2 log
-
-This is the handle to the XAS logger.
-
-=head2 alert
-
-This is the handle to the XAS Alert system.
-
-=head2 env
-
-This is the handle to the XAS environment.
-
-=head1 MUTATORS
-
-These mutator are provided to help control the process.
-
-=head2 facility
-
-The facility to use when sending an alert. 
-
-=head2 priority
-
-The priority of the alert. 
 
 =head1 OPTIONS
 
@@ -379,6 +321,16 @@ This displaces the procedures manual in the defined pager.
 
 This prints out the version of the module.
 
+=head2 --logtype
+
+What type of log to use. By default the log is displayed on the console. Log
+types can be one of the following "console", "file", "logstash" or "syslog".
+
+=head2 --logfile
+
+The name of the log file. When --logfile is specified, it implies a log type 
+of "file".
+
 =head1 SEE ALSO
 
 =over 4
@@ -393,10 +345,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

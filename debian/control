@@ -1,12 +1,12 @@
-Source: libxas-base-perl
+Source: libxas-perl
 Section: perl
 Priority: optional
 Build-Depends: debhelper (>= 7), perl
 Maintainer: kevin l. esteb <kevin@kesteb.us>
-Standards-Version: 3.9.1
+Standards-Version: 3.9.4
 Homepage: http://search.cpan.org/dist/XAS/
 
-Package: libxas-base-perl
+Package: libxas-perl
 Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}
 Description: Middelware for Perl

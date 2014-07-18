@@ -2,9 +2,8 @@ package XAS::Lib::Stomp::Frame;
 
 our $VERSION = '0.01';
 
-use Params::Validate ':all';
-
 use XAS::Class
+  debug     => 0,
   version   => $VERSION,
   base      => 'XAS::Base',
   accessors => 'eol header',
@@ -14,10 +13,6 @@ use XAS::Class
   constant => {
       LF  => "\n",
       EOF => "\000",
-  },
-  messages => {
-      badval => 'invalid header value',
-      badkey => 'invalid header key',
   },
   vars => {
     PARAMS => {
@@ -37,14 +32,6 @@ our %ENCODE_MAP = (
 );
 
 our %DECODE_MAP = reverse %ENCODE_MAP;
-
-Params::Validate::validation_options(
-    on_fail => sub {
-        my $params = shift;
-        my $class  = __PACKAGE__;
-        XAS::Base::validation_exception($params, $class);
-    }
-);
 
 #use Data::Dumper;
 #use Data::Hexdumper;
@@ -89,7 +76,7 @@ sub as_string {
     #
     # v1.2 says there should be no 'padding' in headers and values, not 
     # sure what 'padding' means. It also adds the capability to 'escape'
-    # ceratin values. Please see %ENCODE_MAP and %DECODE_MAP for those
+    # certain values. Please see %ENCODE_MAP and %DECODE_MAP for those
     # values.
     #
     # So add a space and lowercase the header. Why, just because I can.
@@ -127,20 +114,12 @@ sub as_string {
 # ----------------------------------------------------------------------
 
 sub init {
-    my $self = shift;
+    my $class = shift;
 
-    my $headers;
-    my $params = $self->class->hash_vars('PARAMS');
-    my %p = validate(@_, $params);
-
-    $self->{config} = \%p;
-
-    $headers = $p{'-headers'} || {};
-
-    $self->{body}    = $p{'-body'};
-    $self->{target}  = $p{'-target'};
-    $self->{command} = $p{'-command'};
-    $self->{eol}     = ($self->target > 1.1) ? CRLF : LF;
+    my $self = $class->SUPER::init(@_);
+    
+    $headers = $self->headers || {};
+    $self->{eol} = ($self->target > 1.1) ? CRLF : LF;
 
     $self->_decode_headers(\$headers) if ($self->target > 1.1);
     $self->{header} = XAS::Lib::Stomp::Frame::Headers->new($headers);
@@ -210,7 +189,8 @@ sub _decode_headers {
 
 }
 
-package XAS::Lib::Stomp::Frame::Headers;
+package # hide from cpan...
+      XAS::Lib::Stomp::Frame::Headers;
 
 our $VERSION = '0.01';
 
@@ -218,10 +198,9 @@ use XAS::Class
   version   => $VERSION,
   base      => 'XAS::Base',
   constants => 'REFS',
-  accessors => 'methods',
 ;
 
-use Data::Dumper;
+#use Data::Dumper;
 
 sub remove {
     my ($self, $key) = @_;
@@ -347,7 +326,7 @@ XAS::Lib::Stomp::Frame - A STOMP Frame
 
 =head1 DESCRIPTION
 
-This module encapulates a STOMP frame. STOMP is the Streaming Text
+This module encapsulates a STOMP frame. STOMP is the Streaming Text
 Orientated Messaging Protocol (or the Protocol Briefly Known as TTMP
 and Represented by the symbol :ttmp). It's a simple and easy to
 implement protocol for working with Message Orientated Middleware from
@@ -393,7 +372,7 @@ A body for the command.
 
 =head2 as_string
 
-Create a buffer from the serialised frame.
+Create a buffer from the serialized frame.
 
   my $buffer = $frame->as_string;
 
@@ -472,7 +451,7 @@ The name of the header to remove.
 
 =head1 ACKNOWLEDGEMENTS
 
-This module is based on L<Net::Stomp::Frame> by Leon Brocard <acme@astray.com>.
+This module is based on L<Net::Stomp::Frame|https://metacpan.org/pod/Net::Stomp::Frame> by Leon Brocard <acme@astray.com>.
 
 =head1 SEE ALSO
 
@@ -490,10 +469,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2013 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

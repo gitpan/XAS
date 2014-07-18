@@ -1,0 +1,237 @@
+{
+   "abstract" : "Middleware for Perl",
+   "author" : [
+      "Kevin L. Esteb <kevin@kesteb.us>"
+   ],
+   "dynamic_config" : 1,
+   "generated_by" : "Module::Build version 0.4001, CPAN::Meta::Converter version 2.120351",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "XAS",
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Test::More" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "Module::Build" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Badger" : "0.09",
+            "Config::IniFiles" : "2.72",
+            "DateTime" : "0.53",
+            "DateTime::Format::Pg" : "0",
+            "DateTime::Format::Strptime" : "1.1",
+            "File::Pid" : "0",
+            "Hash::Merge" : "0.12",
+            "JSON::XS" : "2.27",
+            "LockFile::Simple" : "0.207",
+            "MIME::Lite" : "3.027",
+            "Net::SSH2" : "0.44",
+            "POE" : "1.35",
+            "Params::Validate" : "0.92",
+            "Pod::Usage" : "1.35",
+            "Set::Light" : "0.04",
+            "Try::Tiny::Retry" : "0.003"
+         }
+      }
+   },
+   "provides" : {
+      "XAS" : {
+         "file" : "lib/XAS.pm",
+         "version" : "0.07"
+      },
+      "XAS::Apps::Logger" : {
+         "file" : "lib/XAS/Apps/Logger.pm",
+         "version" : 0
+      },
+      "XAS::Apps::Rotate" : {
+         "file" : "lib/XAS/Apps/Rotate.pm",
+         "version" : "0.04"
+      },
+      "XAS::Base" : {
+         "file" : "lib/XAS/Base.pm",
+         "version" : "0.03"
+      },
+      "XAS::Class" : {
+         "file" : "lib/XAS/Class.pm",
+         "version" : 0
+      },
+      "XAS::Constants" : {
+         "file" : "lib/XAS/Constants.pm",
+         "version" : "0.02"
+      },
+      "XAS::Exception" : {
+         "file" : "lib/XAS/Exception.pm",
+         "version" : 0
+      },
+      "XAS::Factory" : {
+         "file" : "lib/XAS/Factory.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::App" : {
+         "file" : "lib/XAS/Lib/App.pm",
+         "version" : "0.04"
+      },
+      "XAS::Lib::App::Daemon" : {
+         "file" : "lib/XAS/Lib/App/Daemon.pm",
+         "version" : "0.02"
+      },
+      "XAS::Lib::App::Services" : {
+         "file" : "lib/XAS/Lib/App/Services.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::App::Services::Unix" : {
+         "file" : "lib/XAS/Lib/App/Services/Unix.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::App::Services::Win32" : {
+         "file" : "lib/XAS/Lib/App/Services/Win32.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Curses::Root" : {
+         "file" : "lib/XAS/Lib/Curses/Root.pm",
+         "version" : 0
+      },
+      "XAS::Lib::Curses::Unix" : {
+         "file" : "lib/XAS/Lib/Curses/Unix.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Curses::Win32" : {
+         "file" : "lib/XAS/Lib/Curses/Win32.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Mixins::Handlers" : {
+         "file" : "lib/XAS/Lib/Mixins/Handlers.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Mixins::Keepalive" : {
+         "file" : "lib/XAS/Lib/Mixins/Keepalive.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Modules::Alerts" : {
+         "file" : "lib/XAS/Lib/Modules/Alerts.pm",
+         "version" : "0.04"
+      },
+      "XAS::Lib::Modules::Email" : {
+         "file" : "lib/XAS/Lib/Modules/Email.pm",
+         "version" : "0.02"
+      },
+      "XAS::Lib::Modules::Environment" : {
+         "file" : "lib/XAS/Lib/Modules/Environment.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Modules::Locking" : {
+         "file" : "lib/XAS/Lib/Modules/Locking.pm",
+         "version" : "0.02"
+      },
+      "XAS::Lib::Modules::Log" : {
+         "file" : "lib/XAS/Lib/Modules/Log.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Modules::Log::Console" : {
+         "file" : "lib/XAS/Lib/Modules/Log/Console.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Modules::Log::File" : {
+         "file" : "lib/XAS/Lib/Modules/Log/File.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Modules::Log::Logstash" : {
+         "file" : "lib/XAS/Lib/Modules/Log/Logstash.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Modules::Log::Syslog" : {
+         "file" : "lib/XAS/Lib/Modules/Log/Syslog.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Modules::Spool" : {
+         "file" : "lib/XAS/Lib/Modules/Spool.pm",
+         "version" : "0.03"
+      },
+      "XAS::Lib::Net::Client" : {
+         "file" : "lib/XAS/Lib/Net/Client.pm",
+         "version" : "0.02"
+      },
+      "XAS::Lib::Net::POE::Client" : {
+         "file" : "lib/XAS/Lib/Net/POE/Client.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Net::Server" : {
+         "file" : "lib/XAS/Lib/Net/Server.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::SSH::Client" : {
+         "file" : "lib/XAS/Lib/SSH/Client.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::SSH::Server" : {
+         "file" : "lib/XAS/Lib/SSH/Server.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Service" : {
+         "file" : "lib/XAS/Lib/Service.pm",
+         "version" : "0.03"
+      },
+      "XAS::Lib::Services" : {
+         "file" : "lib/XAS/Lib/Services.pm",
+         "version" : "0.03"
+      },
+      "XAS::Lib::Services::Unix" : {
+         "file" : "lib/XAS/Lib/Services/Unix.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Services::Win32" : {
+         "file" : "lib/XAS/Lib/Services/Win32.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Session" : {
+         "file" : "lib/XAS/Lib/Session.pm",
+         "version" : "0.03"
+      },
+      "XAS::Lib::Stomp::Frame" : {
+         "file" : "lib/XAS/Lib/Stomp/Frame.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Stomp::POE::Client" : {
+         "file" : "lib/XAS/Lib/Stomp/POE/Client.pm",
+         "version" : "0.03"
+      },
+      "XAS::Lib::Stomp::POE::Filter" : {
+         "file" : "lib/XAS/Lib/Stomp/POE/Filter.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Stomp::Parser" : {
+         "file" : "lib/XAS/Lib/Stomp/Parser.pm",
+         "version" : "0.01"
+      },
+      "XAS::Lib::Stomp::Utils" : {
+         "file" : "lib/XAS/Lib/Stomp/Utils.pm",
+         "version" : "0.01"
+      },
+      "XAS::Singleton" : {
+         "file" : "lib/XAS/Singleton.pm",
+         "version" : "0.01"
+      },
+      "XAS::Utils" : {
+         "file" : "lib/XAS/Utils.pm",
+         "version" : "0.04"
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "license" : [
+         "http://dev.perl.org/licenses/"
+      ]
+   },
+   "version" : "0.07"
+}

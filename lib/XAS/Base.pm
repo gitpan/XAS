@@ -1,69 +1,72 @@
 package XAS::Base;
 
-use 5.8.8;
-
-our $VERSION = '0.01';
+our $MESSAGES;
+our $VERSION = '0.03';
 our $EXCEPTION = 'XAS::Exception';
 our ($SCRIPT)  = ( $0 =~ m#([^\\/]+)$# );
 
-use XAS::System;
+use XAS::Factory;
 use XAS::Exception;
+use Config::IniFiles;
 use Params::Validate ':all';
 
 use XAS::Class
-  base     => 'Badger::Base',
-  version  => $VERSION,
-  accessors => 'env',
-  messages => {
-    exception     => "%s: %s",
-    dberror       => "a database error has occurred: %s",
-    invparams     => "invalid parameters passed, reason: %s",
-    nospooldir    => "no spool directory defined",
-    noschema      => "no database schema was defined",
-    unknownos     => "unknown OS: %s",
-    unexpected    => "unexpected error: %s",
-    unknownerror  => "unknown error: %s",
-    nodbaccess    => "unable to access database: %s; reason %s",
-    undeliverable => "unable to send mail to %s; reason: %s",
-    noserver      => "unable to connect to %s; reason: %s",
-    nodelivery    => "unable to send message to %s; reason: %s",
-    sequence      => "unable to retrieve sequence number from %s",
-    write_packet  => "unable to write a packet to %s",
-    read_packet   => "unable to read a packet from %s",
-    lock_error    => "unable to acquire a lock on %s",
-    invperms      => "unable to change file permissions on %s",
-    badini        => "unable to load config file: %s",
-    expiredacct   => 'this accounts expiration day has passed',
-    expiredpass   => 'this accounts password has expired',
-    sessionend    => 'the session has expired',
-    noaccess      => 'you are not able to access the system at this time',
-    loginattempts => 'you have exceeded your login attempts',
-  },
+  debug      => 0,
+  version    => $VERSION,
+  base       => 'Badger::Base',
+  utils      => 'dotid dir_walk',
+  auto_can   => '_auto_load',
+  filesystem => 'Dir',
   vars => {
     PARAMS => {
-      -alerts => { optional => 1, default => 0 },
-      -xdebug => { optional => 1, default => 0 },
-      -logger => { optional => 1, default => undef },
+      -xdebug => { optional => 1, default => 0 }
     }
   }
 ;
 
-Params::Validate::validation_options(
-    on_fail => sub {
-        my $params = shift;
-        my $class  = __PACKAGE__;
-        XAS::Base::validation_exception($params, $class);
-    }
-);
+#use Data::Dumper;
 
 # ----------------------------------------------------------------------
 # Public Methods
 # ----------------------------------------------------------------------
 
-sub config {
-    my ($class, $p) = @_;
+sub load_msgs {
+    my $self = shift;
 
-    return $class->{config}->{$p};
+    my $messages = $self->class->any_var('MESSAGES');
+    return if (defined($messages->{messages_loaded});
+
+    foreach my $path (@INC) {
+
+        my $dir = Dir($path, 'XAS');
+
+        if ($dir->exists) {
+
+            dir_walk(
+                -directory => $dir, 
+                -filter    => $self->env->msgs, 
+                -callback  => sub {
+                    my $file = shift;
+
+                    my $cfg = Config::IniFiles->new(-file => $file->path);
+                    if (my @names = $cfg->Parameters('messages')) {
+                        
+                        foreach my $name (@names) {
+                            
+                            $messages->{$name} = $cfg->val('messages', $name);
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+    }
+
+    $MESSAGES = $messages;
 
 }
 
@@ -71,38 +74,41 @@ sub validation_exception {
     my $param = shift;
     my $class = shift;
 
+    my $method = dotid($class) . '.invparams';
     $param = lcfirst($param);
-    $class =~ s/::/./g;
-    $class = lc($class) . '.invparams';
 
-    __PACKAGE__->throw_msg($class, 'invparams', $param);
+    __PACKAGE__->throw_msg($method, 'invparams', $param);
 
 }
 
-sub log {
-    my $self = shift;
-    my ($level, $message) = validate_pos(@_,
-        { regex => qr/info|warn|error|fatal|debug/i },
-        1
-    );
+sub validate_params {
+    my $self   = shift;
+    my $params = shift;
+    my $specs  = shift;
+    my $class  = shift;
 
-    if ($self->logger) {
+    unless (defined($class)) {
 
-        $self->logger->info($message)  if (lc($level) eq 'info');
-        $self->logger->warn($message)  if (lc($level) eq 'warn');
-        $self->logger->error($message) if (lc($level) eq 'error');
-        $self->logger->fatal($message) if (lc($level) eq 'fatal');
-        $self->logger->debug($message) if (lc($level) eq 'debug');
-
-    } else {
-
-        unless ((lc($level) eq 'debug') && (! $self->xdebug)) {
-
-            warn sprintf("%-5s - %s\n", uc($level), $message);
-
-        }
+        $class = (caller(1))[3];
 
     }
+
+    my $results = validate_with(
+        params => $params,
+        called => $class,
+        spec   => $specs,
+        normalize_keys => sub {
+            my $key = shift; 
+            $key =~ s/^-//; 
+            return lc $key;
+        },
+        on_fail => sub {
+            my $param = shift;
+            validation_exception($param, $class);
+        },
+    );
+
+    return wantarray ? @$results : $results;
 
 }
 
@@ -110,24 +116,79 @@ sub log {
 # Private Methods
 # ----------------------------------------------------------------------
 
+sub _auto_load {
+    my $self = shift;
+    my $name = shift;
+
+    if ($name eq 'alert') {
+
+        return sub { XAS::Factory->module('alert'); } 
+
+    }
+
+    if ($name eq 'alerts') {
+
+        return sub { XAS::Alerts->new(); } 
+
+    }
+
+    if ($name eq 'env') {
+
+        return sub { XAS::Factory->module('environment'); } 
+
+    }
+
+    if ($name eq 'email') {
+
+        return sub { XAS::Factory->module('email'); } 
+
+    }
+
+    if ($name eq 'log') {
+
+        return sub { 
+
+            XAS::Factory->module('logger', {
+                -type     => $self->env->logtype,
+                -filename => $self->env->logfile,
+                -levels => {
+                    debug => $self->debugging ? 1 : 0,
+                }
+            }); 
+
+        }
+
+    }
+
+    $self->throw_msg(
+        dotid($self->class) . '.auto_load.invmethod',
+        'invmethod',
+        $name
+    );
+
+}
+
 sub init {
     my $self = shift;
 
-    my $params = $self->class->hash_vars('PARAMS');
-    my %p = validate(@_, $params);
+    # load the messages
+    
+    $self->load_msgs();
 
-    $self->{config} = \%p;
-    $self->{env} = XAS::System->module('environment');
+    # process PARAMS
+
+    my $class = $self->class;
+    my $params = $self->class->hash_vars('PARAMS');
+    my $p = $self->validate_params(\@_, $params, $class);
+
+    # build our object
+
+    $self->{config} = $p;
 
     no strict "refs";               # to register new methods in package
     no warnings;                    # turn off warnings
 
-    while (my ($key, $value) = each(%p)) {
-
-        $key =~ s/^-//;
-
-        next if ($key eq 'env');
-        next if ($key eq 'log');
+    while (my ($key, $value) = each(%$p)) {
 
         $self->{$key} = $value;
 
@@ -137,6 +198,46 @@ sub init {
         };
 
     }
+
+    $self->debugging($self->xdebug);
+
+    return $self;
+
+}
+
+package # hide from PAUSE
+  XAS::Alerts;
+
+use XAS::Class
+  version => '0.01',
+  base    => 'XAS::Singleton',
+;
+
+sub check {
+    my $self = shift;
+
+    return $self->{enabled};
+
+}
+
+sub on {
+    my $self = shift;
+    my ($enable) = $self->validate_params(\@_, [ 
+        { optional => 1, default => undef, regex => qr/0|1/ } 
+    ]);
+
+    $self->{enabled} = $enable if (defined($enable));
+
+    return $self->{enabled};
+
+}
+
+sub init {
+    my $class = shift;
+
+    my $self = $class->SUPER::init(@_);
+
+    $self->{enabled} = 0;
 
     return $self;
 
@@ -163,72 +264,107 @@ XAS::Base - The base class for the XAS environment
 =head1 DESCRIPTION
 
 This module defines a base class for the XAS Environment and inherits from
-L<Badger::Base|Badger::Base>. The package variable $PARAMS is used to hold 
-the parameters that this class uses for initialization. The parameters can be 
-changed or extended by inheriting classes. This is functionality provided by 
-L<Badger::Class|Badger::Class>. The parameters are validated using 
-L<Params::Validate|Params::Validate>. Any parameters defined in $PARAMS 
-automagically become accessors toward their values.
+L<Badger::Base|http://http://badgerpower.com/docs/Badger/Base.html>. The package variable $PARAMS is used to hold 
+the parameters that this class uses for initialization. Due to the pseudo 
+inheritance of package variables provided by L<Badger::Class|http://badgerpower.com/docs/Badger/Class.html>, these 
+parameters can be changed or extended by inheriting classes. The parameters 
+are validated using L<Params::Validate|https://metacpan.org/pod/Params::Validate>. Any parameters defined in $PARAMS 
+auto-magically become accessors toward their values.
 
 =head1 METHODS
 
 =head2 new($parameters)
 
-This is used to initialized the class. It takes various parameters defined by
-the $PARAMS package variable. 
+This is used to initialized the class. These parameters are validated using 
+the validate_params() method. 
 
-=head2 config($item)
+By default the parameter -xdebug is set to 0. This parameter is used to
+turn on debugging output.
 
-This method will return an item from the internal class config. Which is 
-usually the parameters passed to new() before any manipulation of those
-parameters.
+=head2 load_msgs
 
-=over 4
+This method loads the message files. It searches @INC for the XAS 
+installation. When found, it loads any message files found into the package 
+variable MESSAGES. A message file has the following format:
 
-=item B<$item>
+ [messages]
+ exception = %s: %s
 
-The item you want to return,
+Where "exception" is the name of the message and rest is the text that will
+be used for the message. 
 
-=back
+=head2 validate_params($params, $spec, $class)
 
-=head2 validation_exception($params, $class)
+This method is used to validate parameters. Internally this uses 
+Params::Validate::validate_with() for the parameter validation. 
 
-This method is used by L<Params::Validate|Params::Validate> to display it's 
-failure message.
+By convention, all named parameters have a leading dash. This method will 
+strip off that dash and lower case the parameters name.
+
+If an validation exception is thrown, the parameter name will have the dash 
+stripped.
+
+Based on the $spec, this can return an array or a hashref of validated
+parameters and values. 
 
 =over 4
 
 =item B<$params>
 
-The parameter that caused the exception.
+An array ref to a set of parameters. 
+
+=item B<$spec>
+
+A validation spec as defined by L<Params::Validate>.
 
 =item B<$class>
 
-The class that it happened in.
+An optional class that is calling this method. If one is not provided then
+caller() is used to determine the calling method.
 
 =back
 
-=head2 env
+=head2 validation_exception($param, $class)
 
-A handle to L<XAS::System::Environment|XAS::System::Environment>.
-
-=head2 log($level, $message)
-
-A basic logger.
+This is a package level sub routine. It exists to provide a uniform exception
+error message. It takes these parameters:
 
 =over 4
 
-=item B<$level>
+=item B<$param>
 
-The level for the message. This can be 'info', 'warn', 'error', 'fatal' and
-'debug'.
+The error message returned by L<Params::Validate>.
 
-=item B<$message>
+=item B<$class>
 
-The message to write to the log.
+The routine that the error occurred in.
 
 =back
 
+=head1 AUTOLOADING
+
+Specific modules can be auto-loaded when a method name is invoked. The 
+following methods have been defined:
+
+=head2 alert
+
+This will auto-load L<XAS::Lib::Modules::Alerts|XAS::Lib::Modules::Alerts>.
+Please see that module for more details.
+
+=head2 env
+
+This will auto-load L<XAS::Lib::Modules::Environment|XAS::Lib::Modules::Environment>.
+Please see that module for more details.
+
+=head2 email
+
+This will auto load L<XAS::Lib::Modules::Email|XAS::Lib::Modules::Email>.
+Please see that module for more details.
+
+=head2 log
+
+This will auto load L<XAS::Lib::Modules::Log|XAS::Lib::Modules::Log>.
+Please see that module for more details.
 
 =head1 SEE ALSO
 
@@ -244,10 +380,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

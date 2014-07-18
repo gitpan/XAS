@@ -3,9 +3,9 @@ package XAS::Lib::Stomp::Parser;
 our $VERSION = '0.01';
 
 use XAS::Lib::Stomp::Frame;
-use Params::Validate ':all';
 
 use XAS::Class
+  debug     => 0,
   version   => $VERSION,
   base      => 'XAS::Base',
   utils     => 'trim',
@@ -24,16 +24,8 @@ our $EOL    = qr((\015\012?|\012\015?|\015|\012));
 our $BEOH   = qr((\015\012\000?|\012\015\000?|\015\000|\012\000));
 our $EOH    = qr((\015\012\015\012?|\012\015\012\015?|\015\015|\012\012));
 
-Params::Validate::validation_options(
-    on_fail => sub {
-        my $params = shift;
-        my $class  = __PACKAGE__;
-        XAS::Base::validation_exception($params, $class);
-    }
-);
-
 #use Data::Dumper;
-use Data::Hexdumper;
+#use Data::Hexdumper;
 
 # ----------------------------------------------------------------------
 # Public Methods
@@ -51,8 +43,8 @@ sub parse {
 
     $self->{buffer} .= $buffer;
 
-    $self->log('debug', 'buffer');
-    $self->log('debug', hexdump($self->{buffer}));
+    $self->log->debug('buffer');
+#    $self->log->debug(hexdump($self->{buffer}));
 
     # A valid frame is usually this:
     #
@@ -80,7 +72,7 @@ sub parse {
 
     for (;;) {
 
-        $self->log('debug', 'state = ' . $self->{state});
+        $self->log->debug('state = ' . $self->{state});
 
         if ($self->{state} eq 'command') {
 
@@ -89,8 +81,8 @@ sub parse {
 
             if ($line = $self->_read_line($EOL)) {
 
-                $self->log('debug', 'command');
-                $self->log('debug', hexdump($line));
+                $self->log->debug('command');
+#                $self->log->debug(hexdump($line));
 
                 $line = trim($line);
 
@@ -104,14 +96,14 @@ sub parse {
             # start of the headers, they last until a standalone <eol>
             # or <eof> is reached. 
 
-            $self->log('debug', "header");
+            $self->log->debug("header");
 
             $length = length($self->{buffer});
 
             $self->{buffer} =~ m/$EOH/g;
             $clength = pos($self->{buffer}) || -1;
 
-            $self->log('debug', "end of headers $clength");
+            $self->log->debug("end of headers $clength");
 
             if ($clength == -1) {
 
@@ -119,18 +111,18 @@ sub parse {
                 $self->{buffer} =~ m/$BEOH/g;
                 $clength = pos($self->{buffer}) || -1;
 
-                $self->log('debug', "end of frame $clength");
+                $self->log->debug("end of frame $clength");
 
             }
 
             if (($clength != -1) && ($clength <= $length)) {
 
                 $line = $self->_slurp($clength);
-                $self->log('debug', hexdump($line));
+#                $self->log->debug(hexdump($line));
 
                 while ($line =~ s/^$HEADER//) {
 
-                    $self->log('debug', 'valid header');
+                    $self->log->debug('valid header');
 
                     my $key   = lc($1);
                     my $value = trim($2);
@@ -164,7 +156,7 @@ sub parse {
 
         } elsif ($self->{state} eq 'body') {
 
-            $self->log('debug', 'body');
+            $self->log->debug('body');
 
             # start of the body, determine wither to use
             # content-length or EOF to find the end 
@@ -173,7 +165,7 @@ sub parse {
 
             if ($clength = $self->{headers}->{'content-length'}) {
 
-                $self->log('debug', 'using content-length');
+                $self->log->debug('using content-length');
 
                 if ($clength <= $length) {
 
@@ -184,7 +176,7 @@ sub parse {
 
             } else {
 
-                $self->log('debug', 'using EOF');
+                $self->log->debug('using EOF');
 
                 $clength = index($self->{buffer}, $EOF);
 
@@ -200,7 +192,7 @@ sub parse {
 
         } elsif ($self->{state} eq 'frame') {
 
-            $self->log('debug', 'building frame');
+            $self->log->debug('building frame');
 
             # clear out inter-frame crap and create the object.
 
@@ -315,11 +307,12 @@ XAS::Lib::Stomp::Parse - Create a STOMP Frame From a Buffer
 
 =head1 DESCRIPTION
 
-This module encapulates creates STOMP frames from a buffer. STOMP is the 
+This module creates STOMP frames from a buffer. STOMP is the 
 Streaming Text Orientated Messaging Protocol (or the Protocol Briefly 
 Known as TTMP and Represented by the symbol :ttmp). It's a simple and easy to
 implement protocol for working with Message Orientated Middleware from
-any language. 
+any language. This module supports v1.0, v1.1 and v1.2 frames with limited
+interoperability between the frame types.
 
 A STOMP frame consists of a command, a series of headers and a body.
 
@@ -358,10 +351,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2013 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

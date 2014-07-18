@@ -5,12 +5,13 @@ our $VERSION = '0.01';
 use XAS::Lib::Stomp::Parser;
 
 use XAS::Class
-  version   => $VERSION,
-  base      => 'XAS::Base',
+  debug   => 0,
+  version => $VERSION,
+  base    => 'XAS::Base',
   accessors => 'filter',
   vars => {
     PARAMS => {
-        -target  => { optional => 1, default => '1.0', regex => qr/(1\.0|1\.1|1\.2)/ },
+      -target  => { optional => 1, default => '1.0', regex => qr/(1\.0|1\.1|1\.2)/ },
     }
   }
 ;
@@ -129,7 +130,7 @@ from said object.
 
 =head2 new
 
-This method intilaizles the module. It takes these parameters:
+This method initializes the module. It takes these parameters:
 
 =over 4
 
@@ -158,10 +159,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2013 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

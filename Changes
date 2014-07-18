@@ -23,3 +23,17 @@ Revision history for XAS
         Updated various modules for STOMP support.
         Ported Supervisor into the framework
 
+0.06    06-Dec-2013 Kevin L. Esteb
+        Updated logging to be able to use Log::Log4perl.
+        Updated cli option handling.
+        Added modules for Win32 Services.
+        Added module to RPC over SSH.
+
+0.07    30-May-2014 Kevin L. Esteb
+        Due to problems with releasing 0.06. I rethought how code would 
+          be distributed. This lead to breaking everything up
+          into smaller chunks for easier maintence. This also lead to a
+          rewrite and simplification of the code base itself.
+        Now using git as the source repository. It seems to be what the
+          "cool kids" are using.
+

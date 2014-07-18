@@ -5,26 +5,12 @@ our $VERSION = '0.02';
 use Badger::Exporter;
 
 use Badger::Class
+  debug   => 0,
   version => $VERSION,
   base    => 'Badger::Constants',    # grab the badger constants
   constant => {
-      AVAILABLE  => 'Available',
-      DELETE     => 'Delete',
       XAS_QUEUE  => '/queue/xas',
 
-      # PBS Status vaules
-
-      SUBMIT     => 'Submit',
-      SUBMITTED  => 'Submitted',
-      UNKNOWN    => 'Unknown',
-      QUEUED     => 'Queued',
-      COMPLETED  => 'Completed',
-      EXITING    => 'Exiting',
-      RUNNING    => 'Running',
-      MOVING     => 'Moving',
-      WAITING    => 'Waiting',
-      SUSPENDED  => 'Suspended',
-  
       # Supervisor
 
       START      => 'start',
@@ -48,10 +34,6 @@ use Badger::Class
       KILLME     => 'killme',
       PROC_ROOT  => '/proc',
 
-      # Workman
-
-      JOBSTATS  => '/queue/jobstats',
-
       # JSON RPC
 
       RPC_JSON            => '2.0',
@@ -67,53 +49,42 @@ use Badger::Class
       RPC_SRV_ERR_MIN     => -32000,
       RPC_SRV_ERR_MAX     => -32768,
 
-      # Curses screen stuff
+      # logging
 
-      LABEL_F1  => 'F1=Help',
-      LABEL_F2  => 'F2=Yes',
-      LABEL_F3  => 'F3=Exit',
-      LABEL_F4  => 'F4=No',
-      LABEL_F5  => 'F5=Refresh',
-      LABEL_F6  => 'F6=Left',
-      LABEL_F7  => 'F7=Bkwd',
-      LABEL_F8  => 'F8=Fwd',
-      LABEL_F9  => 'F9=Right',
-      LABEL_F10 => 'F10=Actions',
-      LABEL_F11 => 'F11=Select',
-      LABEL_F12 => 'F12=Cancel',
+      LOG_LEVELS   => qr/info|warn|error|fatal|debug|trace/,
+      LOG_TYPES    => qr/console|file|logstash|syslog/,
+      LOG_FACILITY => qr/auth|authpriv|cron|daemon|ftp|local[0-7]|lpr|mail|news|user|uucp/,
+
+      # alerts
+
+      ALERT_PRIORITY => qr/low|medium|high|info/i,
+      ALERT_FACILITY => qr/systems/i,
 
   },
   exports => {
-      all => q/AVAILABLE DELETE UNKNOWN QUEUED COMPLETED EXITING RUNNING 
-               MOVING WAITING SUSPENDED SUBMIT SUBMITTED JOBSTATS RPC_JSON 
-               RPC_DEFAULT_PORT RPC_DEFAULT_ADDRESS RPC_ERR_PARSE RPC_ERR_REQ 
-               RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL RPC_ERR_SERVER 
-               RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN RPC_ERR_APP LABEL_F1 LABEL_F2 
-               LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6 LABEL_F7 LABEL_F8 LABEL_F9 
-               LABEL_F10 LABEL_F11 LABEL_F12 XAS_QUEUE START STOP EXIT 
+      all => q/RPC_JSON RPC_DEFAULT_PORT RPC_DEFAULT_ADDRESS RPC_ERR_PARSE 
+               RPC_ERR_REQ RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL 
+               RPC_ERR_SERVER RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN 
+               RPC_ERR_APP XAS_QUEUE START STOP EXIT 
                RELOAD STAT RUNNING ALIVE DEAD STOPPED STARTED RELOADED 
-               STATED EXITED SHUTDOWN KILLME PROC_ROOT NOCMD/,
-      any => q/AVAILABLE DELETE UNKNOWN QUEUED COMPLETED EXITING RUNNING 
-               MOVING WAITING SUSPENDED SUBMIT SUBMITTED JOBSTATS RPC_JSON 
-               RPC_DEFAULT_PORT RPC_DEFAULT_ADDRESS RPC_ERR_PARSE RPC_ERR_REQ 
-               RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL RPC_ERR_SERVER 
-               RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN RPC_ERR_APP LABEL_F1 LABEL_F2 
-               LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6 LABEL_F7 LABEL_F8 LABEL_F9 
-               LABEL_F10 LABEL_F11 LABEL_F12 XAS_QUEUE START STOP EXIT 
-               RELOAD STAT RUNNING ALIVE DEAD STOPPED STARTED RELOADED STATED
-               EXITED SHUTDOWN KILLME PROC_ROOT NOCMD/,
+               STATED EXITED SHUTDOWN KILLME PROC_ROOT NOCMD
+               LOG_LEVELS LOG_TYPES LOG_FACILITY ALERT_PRIORITY ALERT_FACILITY/,
+      any => q/RPC_JSON RPC_DEFAULT_PORT RPC_DEFAULT_ADDRESS RPC_ERR_PARSE 
+               RPC_ERR_REQ RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL 
+               RPC_ERR_SERVER RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN 
+               RPC_ERR_APP XAS_QUEUE START STOP EXIT 
+               RELOAD STAT RUNNING ALIVE DEAD STOPPED STARTED RELOADED 
+               STATED EXITED SHUTDOWN KILLME PROC_ROOT NOCMD
+               LOG_LEVELS LOG_TYPES LOG_FACILITY ALERT_PRIORITY ALERT_FACILITY/,
       tags => {
-          batch   => 'UNKNOWN QUEUED COMPLETED EXITING RUNNING MOVING WAITING SUSPENDED AVAILABLE DELETE SUBMIT SUBMITTED',
-          workman => 'UNKNOWN COMPLETED RUNNING AVAILABLE SUBMIT SUBMITTED JOBSTAT',
           jsonrpc => q/RPC_JSON RPC_DEFAULT_PORT RPC_DEFAULT_ADDRESS RPC_ERR_PARSE 
                       RPC_ERR_REQ RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL 
                       RPC_ERR_SERVER RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN RPC_ERR_APP/,
-          labels  => q/LABEL_F1 LABEL_F2 LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6
-                      LABEL_F7 LABEL_F8 LABEL_F9 LABEL_F10 LABEL_F11 
-                      LABEL_F12/,
           supervisor => q/START STOP EXIT RELOAD STAT RUNNING ALIVE DEAD 
                           STOPPED STARTED RELOADED STATED EXITED SHUTDOWN 
                           KILLME PROC_ROOT NOCMD/,
+          logging => q/LOG_LEVELS LOG_TYPES LOG_FACILITY/,
+          alerts  => q/ALERT_PRIORITY ALERT_FACILITY/,
 
       }
   }
@@ -141,28 +112,26 @@ XAS::Constants - A Perl extension for the XAS environment
 =head1 DESCRIPTION
 
 This module provides various constants for the XAS enviromnet. It inherits from
-L<Badger::Constants|Badger::Constants> and also provides those constants.
+L<Badger::Constants|http://badgerpower.com/docs/Badger/Constants.html> and also provides these additional
+constants.
 
 =head2 EXPORT
 
- AVAILABLE DELETE UNKNOWN QUEUED COMPLETED EXITING RUNNING 
- MOVING WAITING SUSPENDED SUBMIT SUBMITTED JOBSTATS RPC_JSON 
- RPC_DEFAULT_PORT RPC_DEFAULT_ADDRESS RPC_ERR_PARSE RPC_ERR_REQ 
- RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL RPC_ERR_SERVER 
- RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN RPC_ERR_APP LABEL_F1 LABEL_F2 
- LABEL_F3 LABEL_F4 LABEL_F5 LABEL_F6 LABEL_F7 LABEL_F8 LABEL_F9 
- LABEL_F10 LABEL_F11 LABEL_F12 START STOP EXIT RELOAD STAT 
- RUNNING ALIVE DEAD STOPPED STARTED RELOADED STATED EXITED 
- SHUTDOWN KILLME PROC_ROOT
+ RPC_JSON RPC_DEFAULT_PORT RPC_DEFAULT_ADDRESS RPC_ERR_PARSE 
+ RPC_ERR_REQ RPC_ERR_METHOD RPC_ERR_PARAMS RPC_ERR_INTERNAL 
+ RPC_ERR_SERVER RPC_SRV_ERR_MAX RPC_SRV_ERR_MIN RPC_ERR_APP 
 
+ LOG_TYPES LOG_FACILITY LOG_LEVELS
+
+ ALERT_PRIORITY ALERT_FACILITY
+ 
  Along with these tags
 
- batch
- workman
  jsonrpc
- labels
  supervisor
-
+ logging
+ alerts
+ 
 =head1 SEE ALSO
 
 =over 4
@@ -177,10 +146,12 @@ Kevin Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut

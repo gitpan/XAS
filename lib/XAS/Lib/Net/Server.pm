@@ -1,45 +1,32 @@
 package XAS::Lib::Net::Server;
 
-our $VERSION = '0.03';
+our $VERSION = '0.01';
 
 use POE;
-use Socket;
-use Params::Validate;
+use Socket ':all';
 use POE::Filter::Line;
 use POE::Wheel::ReadWrite;
 use POE::Wheel::SocketFactory;
 
 use XAS::Class
+  debug     => 0,
   version   => $VERSION,
-  base      => 'XAS::Lib::Session',
+  base      => 'XAS::Lib::Service',
+  mixin     => 'XAS::Lib::Mixins::Keepalive',
   utils     => 'weaken params',
   accessors => 'session',
   constants => 'ARRAY',
-  messages => {
-      'connection_failed' => "%s: the client connection failed with %s, reason %s",
-      'client_error'      => "%s: the client experienced error %s, reason %s",
-      'client_connect'    => "%s: a connection from %s on port %s",
-      'client_disconnect' => "%s: client disconnected from %s on port %s",
-      'recmsg'            => "%s: received message \"%s\" from %s on port %s",
-      'reaper'            => "%s: reaper invoked for %s on port %s",
-  },
   vars => {
-      PARAMS => {
-          -port             => 1,
-          -inactivity_timer => { optional => 1, default => 600 },
-          -filter           => { optional => 1, default => undef },
-          -address          => { optional => 1, default => 'localhost' },
-      }
+    PARAMS => {
+      -port             => 1,
+      -tcp_keepalive    => { optional => 1, default => 0 },
+      -inactivity_timer => { optional => 1, default => 600 },
+      -filter           => { optional => 1, default => undef },
+      -address          => { optional => 1, default => 'localhost' },
+      -eol              => { optional => 1, default => "\012\015" },
+    }
   }
 ;
-
-Params::Validate::validation_options(
-    on_fail => sub {
-        my $params = shift;
-        my $class  = __PACKAGE__;
-        XAS::Base::validation_exception($params, $class);
-    }
-);
 
 #use Data::Dumper;
 
@@ -47,22 +34,121 @@ Params::Validate::validation_options(
 # Public Methods
 # ----------------------------------------------------------------------
 
-sub cleanup {
-    my ($self, $kernel, $session) = @_;
+sub session_initialize {
+    my $self = shift;
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: entering session_intialize()");
+
+    $poe_kernel->state('process_errors',   $self);
+    $poe_kernel->state('process_request',  $self);
+    $poe_kernel->state('process_response', $self);
+
+    # private events
+
+    $poe_kernel->state('client_error',             $self, '_client_error');
+    $poe_kernel->state('client_input',             $self, '_client_input');
+    $poe_kernel->state('client_reaper',            $self, '_client_reaper');
+    $poe_kernel->state('client_output',            $self, '_client_output');
+    $poe_kernel->state('client_connected',         $self, '_client_connected');
+    $poe_kernel->state('client_connection',        $self, '_client_connection');
+    $poe_kernel->state('client_connection_failed', $self, '_client_connection_failed');
+
+    # walk the chain
+
+    $self->SUPER::session_initialize();
+
+    $self->log->debug("$alias: leaving session_intialize()");
+
+}
+
+sub session_startup {
+    my $self = shift;
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: entering session_startup()");
+
+    $poe_kernel->call($alias, 'client_connection');
+
+    # walk the chain
+
+    $self->SUPER::session_startup();
+
+    $self->log->debug("$alias: leaving session_startup()");
+
+}
+
+sub session_shutdown {
+    my $self = shift;
 
     my $alias = $self->alias;
     my $clients = $self->{clients};
 
-    $self->log('debug', "$alias: cleanup()");
+    $self->log->debug("$alias: entering session_shutdown()");
 
     while (my $client = keys %$clients) {
 
-        $kernel->alarm_remove($client->{watchdog});
+        $poe_kernel->alarm_remove($client->{watchdog});
         $client = undef;
 
     }
 
     delete $self->{listener};
+
+    # walk the chain
+
+    $self->SUPER::session_shutdown();
+
+    $self->log->debug("$alias: leaving session_shutdown()");
+
+}
+
+sub session_pause {
+    my $self = shift;
+
+    my $alias = $self->alias;
+    my $clients = $self->{clients};
+
+    $self->log->debug("$alias: entering session_pause()");
+
+    while (my $wheel = keys %$clients) {
+
+        $wheel->pause_input();
+        $poe_kernel->alarm_remove($wheel->{watchdog});
+
+    }
+
+    # walk the chain
+
+    $self->SUPER::session_pause();
+
+    $self->log->debug("$alias: entering session_pause()");
+
+}
+
+sub session_resume {
+    my $self = shift;
+
+    my $alias = $self->alias;
+    my $clients = $self->{clients};
+    my $inactivity = $self->inactivity_timer;
+
+    $self->log->debug("$alias: entering session_resume()");
+
+    while (my $wheel = keys %$clients) {
+
+        $wheel->resume_input();
+        $poe_kernel->alarm_set('client_reaper', $inactivity, $wheel);
+
+    }
+
+    # walk the chain
+
+    $self->SUPER::session_resume();
+
+    $self->log->debug("$alias: leaving session_resume()");
 
 }
 
@@ -71,7 +157,7 @@ sub reaper {
 
     my $alias = $self->alias;
 
-    $self->log('debug', $self->message('reaper', $alias, $self->host($wheel), $self->peerport($wheel)));
+    $self->log->debug_msg('reaper', $alias, $self->host($wheel), $self->peerport($wheel));
 
 }
 
@@ -86,11 +172,11 @@ sub peerport {
 
 }
 
-sub host {
+sub peerhost {
     my ($self, $wheel) = @_;
 
     return $self->{clients}->{$wheel}->{host};
-    
+
 }
 
 sub client {
@@ -105,25 +191,30 @@ sub client {
 # ----------------------------------------------------------------------
 
 sub process_request {
-    my ($kernel, $self, $input, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
+    my ($self, $input, $ctx) = @_[OBJECT,ARG0,ARG1];
 
     my $output = $input;
+    my $alias = $self->alias;
 
-    $kernel->yield('process_response', $output, $ctx);
+    $poe_kernel->post($alias, 'process_response', $output, $ctx);
 
 }
 
 sub process_response {
-    my ($kernel, $self, $output, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
+    my ($self, $output, $ctx) = @_[OBJECT,ARG0,ARG1];
 
-    $kernel->yield('client_output', $output, $ctx->{wheel});
+    my $alias = $self->alias;
+
+    $poe_kernel->post($alias, 'client_output', $output, $ctx);
 
 }
 
 sub process_errors {
-    my ($kernel, $self, $output, $ctx) = @_[KERNEL,OBJECT,ARG0,ARG1];
+    my ($self, $output, $ctx) = @_[OBJECT,ARG0,ARG1];
 
-    $kernel->yield('client_output', $output, $ctx->{wheel});
+    my $alias = $self->alias;
+
+    $poe_kernel->post($alias, 'client_output', $output, $ctx);
 
 }
 
@@ -131,14 +222,43 @@ sub process_errors {
 # Private Events
 # ----------------------------------------------------------------------
 
+sub _client_connection {
+    my ($self) = @_[OBJECT];
+
+    my $alias = $self->alias;
+
+    $self->log->debug("$alias: _client_connection()");
+
+    # start listening for connections
+
+    $self->{listener} = POE::Wheel::SocketFactory->new(
+        BindAddress    => $self->address,
+        BindPort       => $self->port,
+        SocketType     => SOCK_STREAM,
+        SocketDomain   => AF_INET,
+        SocketProtocol => 'tcp',
+        Reuse          => 1,
+        SuccessEvent   => 'client_connected',
+        FailureEvent   => 'client_connection_failed'
+    );
+
+}
+
 sub _client_connected {
-    my ($kernel, $self, $socket, $peeraddr, $peerport, $wheel_id) = 
-      @_[KERNEL,OBJECT,ARG0 .. ARG3];
+    my ($self, $socket, $peeraddr, $peerport, $wheel_id) = @_[OBJECT,ARG0..ARG3];
 
     my $alias = $self->alias;
     my $inactivity = $self->inactivity_timer;
 
-    $self->log('debug', "$alias: _client_connected()");
+    $self->log->debug("$alias: _client_connected()");
+
+    if ($self->tcp_keepalive) {
+
+        $self->log->debug("$alias: keepalive activated");
+
+        $self->enable_keepalive($socket);
+
+    }
 
     my $client = POE::Wheel::ReadWrite->new(
         Handle     => $socket,
@@ -154,66 +274,75 @@ sub _client_connected {
     $self->{clients}->{$wheel}->{port}   = $peerport;
     $self->{clients}->{$wheel}->{client} = $client;
     $self->{clients}->{$wheel}->{active} = time();
-    $self->{clients}->{$wheel}->{watchdog} = $kernel->alarm_set('client_reaper', $inactivity, $wheel);
+    $self->{clients}->{$wheel}->{watchdog} = $poe_kernel->alarm_set('client_reaper', $inactivity, $wheel);
 
-    $self->log('info', $self->message('client_connect', $alias, $host, $peerport));
+    $self->log->info_msg('client_connect', $alias, $host, $peerport);
 
 }
 
 sub _client_connection_failed {
-    my ($kernel, $self, $syscall, $errnum, $errstr, $wheel) = 
-      @_[KERNEL,OBJECT,ARG0 .. ARG3];
+    my ($self, $syscall, $errnum, $errstr, $wheel) = @_[OBJECT,ARG0..ARG3];
 
     my $alias = $self->alias;
 
-    $self->log('error', $self->message('connection_failed', $alias, $errnum, $errstr));
+    $self->log->error_msg('connection_failed', $alias, $errnum, $errstr);
 
     delete $self->{listener};
 
 }
 
 sub _client_input {
-    my ($kernel, $self, $input, $wheel) = @_[KERNEL,OBJECT,ARG0,ARG1];
+    my ($self, $input, $wheel) = @_[OBJECT,ARG0,ARG1];
 
     my $alias = $self->alias;
     my $ctx = {
         wheel => $wheel
     };
 
-    $self->log('debug', "$alias: _client_input()");
+    $self->log->debug("$alias: _client_input()");
 
     $self->{clients}->{$wheel}->{active} = time();
 
-    $kernel->yield('process_request', $input, $ctx);
+    $poe_kernel->post($alias, 'process_request', $input, $ctx);
 
 }
 
 sub _client_output {
-    my ($kernel, $self, $output, $wheel) = @_[KERNEL,OBJECT,ARG0,ARG1];
+    my ($self, $data, $ctx) = @_[OBJECT,ARG0,ARG1];
 
+    my @packet;
     my $alias = $self->alias;
 
-    $self->log('debug', "$alias: _client_output()");
+    push(@packet, $data);
 
-    $self->{clients}->{$wheel}->{client}->put($output);
+    $self->log->debug("$alias: _client_output()");
+
+    if (my $wheel = $ctx->{wheel})) {
+
+        $self->{clients}->{$wheel}->{client}->put(@packet);
+
+    } else {
+
+        $self->log->error_msg('nowheel', $alias);
+
+    }
 
 }
 
 sub _client_error {
-    my ($kernel, $self, $syscall, $errnum, $errstr, $wheel) =
-      @_[KERNEL,OBJECT,ARG0 .. ARG3];
+    my ($self, $syscall, $errnum, $errstr, $wheel) = @_[OBJECT,ARG0..ARG3];
 
     my $alias = $self->alias;
 
-    $self->log('debug', "$alias: _client_error()");
+    $self->log->debug("$alias: _client_error()");
 
     if ($errnum == 0) {
 
-        $self->log('info', $self->message('client_disconnect', $alias, $self->host($wheel), $self->port($wheel)));
+        $self->log->info_msg('client_disconnect', $alias, $self->peerhost($wheel), $self->peerport($wheel));
 
     } else {
 
-        $self->log('error', $self->message('client_error', $alias, $errnum, $errstr));
+        $self->log->error_msg('client_error', $alias, $errnum, $errstr);
 
     }
 
@@ -222,7 +351,7 @@ sub _client_error {
 }
 
 sub _client_reaper {
-    my ($kernel, $self, $wheel) = @_[KERNEL,OBJECT,ARG0];
+    my ($self, $wheel) = @_[OBJECT,ARG0];
 
     my $timeout = time() - $self->inactivity_timer;
 
@@ -231,51 +360,6 @@ sub _client_reaper {
         $self->reaper($wheel);
 
     }
-
-}
-
-sub _session_init {
-    my ($kernel, $self, $session) = @_[KERNEL,OBJECT,SESSION];
-
-    my $alias = $self->alias;
-
-    $self->log('debug', "$alias: _session_init()");
-
-    # public events
-
-    $kernel->state('process_errors',   $self);
-    $kernel->state('process_request',  $self);
-    $kernel->state('process_response', $self);
-
-    # private events
-
-    $kernel->state('client_error',             $self, '_client_error');
-    $kernel->state('client_input',             $self, '_client_input');
-    $kernel->state('client_reaper',            $self, '_client_reaper');
-    $kernel->state('client_output',            $self, '_client_output');
-    $kernel->state('client_connected',         $self, '_client_connected');
-    $kernel->state('client_connection_failed', $self, '_client_connection_failed');
-
-    # call out for other stuff
-
-    $self->initialize($kernel, $session);
-
-    # start listening for connections
-
-    $self->{listener} = POE::Wheel::SocketFactory->new(
-        BindAddress    => $self->address,
-        BindPort       => $self->port,
-        SocketType     => SOCK_STREAM,
-        SocketDomain   => AF_INET,
-        SocketProtocol => 'tcp',
-        Reuse          => 1,
-        SuccessEvent   => 'client_connected',
-        FailureEvent   => 'client_connection_failed'
-    );
-
-    # start everything up
-
-    $kernel->yield('startup');
 
 }
 
@@ -288,11 +372,13 @@ sub init {
 
     my $self = $class->SUPER::init(@_);
 
+    $self->init_keepalive();     # init tcp keepalive definations
+
     unless (defined($self->filter)) {
 
         $self->{filter} = POE::Filter::Line->new(
-            InputLiteral  => "\012\015",
-            OutputLiteral => "\012\015"
+            InputLiteral  => $self->eol,
+            OutputLiteral => $self->eol,
         );
 
     }
@@ -316,14 +402,16 @@ XAS::Lib::Net::Server - A basic network server for the XAS Environment
      -address          => 'localhost',
      -filter           => POE::Filter::Line->new(),
      -alias            => 'server',
-     -inactivity_timer => 600
+     -inactivity_timer => 600,
+     -eol              => "\012\015"
  }
 
 =head1 DESCRIPTION
 
-This module implements a simple text orientated nework protocol. All "packets" 
-will have an explict "\012\015" appended. These packets may be formated strings, 
-such as JSON. This module inherits from L<XAS::Lib::Session>.
+This module implements a simple text orientated network protocol. Data is
+sent out as "packets". Which means everything is delimited with a consistent
+EOL. These packets may be formatted strings, such as JSON. This module inherits
+from L<XAS::Lib::Session>.
 
 =head1 METHODS
 
@@ -346,43 +434,31 @@ The IP port to listen on.
 
 The address to bind too.
 
-=item B<-inactivty_timer>
+=item B<-inactivity_timer>
 
-Sets an inactivity timer on clients. When it is surpassed, the method reaper() 
-is called with the POE wheel id. What reaper() does is application specific. 
+Sets an inactivity timer on clients. When it is surpassed, the method reaper()
+is called with the POE wheel id. What reaper() does is application specific.
 The default is 600 seconds.
 
 =item B<-filter>
 
 An optional filter to use, defaults to POE::Filter::Line
 
+=item B<-eol>
+
+An optional EOL, defaults to "\012\015";
+
 =back
 
 =head2 reaper($wheel)
 
-Called when the inactivity timer is triggered. 
+Called when the inactivity timer is triggered.
 
 =over 4
 
 =item B<$wheel>
 
 The POE wheel that triggered the timer.
-
-=back
-
-=head2 declare_events($kernel, $session)
-
-Declare methods to be acted upon.
-
-=over 4
-
-=item B<$kernel>
-
-A handle to the POE kernel.
-
-=item B<$session>
-
-A handle to the current POE session.
 
 =back
 
@@ -402,7 +478,7 @@ The POE wheel to use.
 
 =head2 host($wheel)
 
-This returns the current hostname for that wheel.
+This returns the current host name for that wheel.
 
 =over 4
 
@@ -426,78 +502,66 @@ The POE wheel to use.
 
 =head1 PUBLIC EVENTS
 
-=head2 process_request($kernel, $self, $input, $ctx)
+=head2 process_request(OBJECT, ARG0, ARG1)
 
 This event will process the input from the client. It takes the
 following parameters:
 
 =over 4
 
-=item B<$kernel>
-
-A handle to the POE kernel.
-
-=item B<$self>
+=item B<OBJECT>
 
 A handle to the current object.
 
-=item B<$input>
+=item B<ARG0>
 
-The input recieved from the socket.
+The input received from the socket.
 
-=item B<$ctx>
+=item B<ARG1>
 
 A hash variable to maintain context. This will be initialized with a "wheel"
 field. Others fields may be added as needed.
 
 =back
 
-=head2 process_response($kernel, $self, $output, $ctx)
+=head2 process_response(OBJECT, ARG0, ARG1)
 
 This event will process the output from the client. It takes the
 following parameters:
 
 =over 4
 
-=item B<$kernel>
-
-A handle to the POE kernel.
-
-=item B<$self>
+=item B<OBJECT>
 
 A handle to the current object.
 
-=item B<$output>
+=item B<ARG0>
 
 The output to be sent to the socket.
 
-=item B<$ctx>
+=item B<ARG1>
 
 A hash variable to maintain context. This uses the "wheel" field to direct output
 to the correct socket. Others fields may have been added as needed.
 
 =back
 
-=head2 process_errors($kernel, $self, $output, $ctx)
+=head2 process_errors(OBJECT, ARG0, ARG1)
 
 This event will process the error output from the client. It takes the
 following parameters:
 
 =over 4
 
-=item B<$kernel>
-
-A handle to the POE kernel.
-
-=item B<$self>
+=item B<OBJECT>
 
 A handle to the current object.
 
-=item B<$output>
+=item B<ARG0>
 
 The output to be sent to the socket.
 
-=item B<$ctx>
+=item B<ARG1>
 
 A hash variable to maintain context. This uses the "wheel" field to direct output
 to the correct socket. Others fields may have been added as needed.
@@ -520,10 +584,12 @@ Kevin L. Esteb, E<lt>kevin@kesteb.usE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Kevin L. Esteb
+Copyright (C) 2014 Kevin L. Esteb
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+See L<http://dev.perl.org/licenses/> for more information.
 
 =cut
